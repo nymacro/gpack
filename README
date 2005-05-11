@@ -1,0 +1,56 @@
+GPack - GNU/Linux Package Manager (GPL)
+
+See COPYING for license details.
+
+!TESTING RELEASE!
+
+See file "gpack.conf" for environment settings.
+
+By default the package manager expects to be in ~/gpack-<version>/ (you can
+just `tar xzf gpack-<version>.tar.gz -C ~` to install it in the proper place).
+Another option is to edit gpack.conf file located in the extracted directory.
+
+The script "gpack" is the public package manager interface. Make it
+executable (`chmod +x gpack`) or use it as an argument to sh
+(`sh gpack`).
+
+Two example packages are provided, one a plain test package, the other
+an actual working package. These packages are:
+    io  - A small prototype based object-oriented prorgamming language
+          released under the BSD license. There is no particular reason
+          i chose this package, but i should have chose something under
+          GPL which suits Sat GNU/Linux' philosophy more.
+    test- A plain test package which doesn't do much.
+
+To install on of these packages (or other packages you may want), use
+the following command:
+    gpack install <package name>
+
+To remove the package, run:
+    gpack remove <package name>
+
+To see all the commands available to gpack, run gpack without any
+arguments.
+
+
+DIRECTORY MEANINGS:
+_vfs    - Fake root file system (keeping host system clean when testing)
+_info   - Installed package information
+_root   - Package description/archive root
+
+To change where the above directories are located, see "gpack.conf".
+_vfs    = PKGVFS
+_info   = PKGINFO
+_root   = PKGROOT
+
+PACKAGE MAIN CATEGORIES
+base    - base system packages
+devel   - development packages
+libs    - libraries
+daemons - daemons
+editors - editors
+network - network tools
+system  - system tools
+
+
+Aaron 'nym' Marks 2005

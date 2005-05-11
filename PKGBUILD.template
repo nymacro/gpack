@@ -1,0 +1,36 @@
+name=PackageName
+version=0.0.0
+release=1
+license=license-name
+group=group/name
+depends=("dependancy >= 1.0.0" "anotherdep")
+optdeps=("something")
+sources=(list of source files)
+
+build() {
+    cd somesourcedir
+    ./configure --prefix=/usr
+    make
+    make DESTDIR=$PKG install
+}
+
+#optional
+pre-install() {
+    echo "something"
+}
+
+#optional
+post-install() {
+    echo "something"
+}
+
+#optional
+pre-remove() {
+    echo "something"
+}
+
+#optional
+post-remove() {
+    echo "something"
+}
+

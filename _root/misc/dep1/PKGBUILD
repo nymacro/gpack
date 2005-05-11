@@ -1,0 +1,16 @@
+name=dep1
+version=0.0.0
+release=1
+license=gpl
+group=group/name
+depends=()
+optdeps=()
+sources=()
+
+build() {
+    mkdir $PKG/opt
+    mkdir $PKG/usr
+    mkdir $PKG/bin
+    mkdir $PKG/etc
+}
+
