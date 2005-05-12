@@ -28,7 +28,7 @@
 #later on Sat system gpack.conf will be in absolute dir
 . ./gpack.conf
 
-VERSION=0.7.2
+VERSION=0.8.0
 
 # create directories if they dont exist
 if [ ! -e "$PKGVFS" ]; then
@@ -100,7 +100,12 @@ pkgFind() {
 pkgVersion() {
     pkgFind $1
     if [ "$?" == "1" ]; then
-        . $RETURN/$PKGFILE
+        if [ -e "$RETURN/$PKGFILE" ]; then
+            . $RETURN/$PKGFILE
+        else
+            echo "Error: Could not find associated $PKGFILE (version check)"
+            exit 1
+        fi
         RETURN=$version
         return 1
     fi
@@ -153,7 +158,13 @@ pkgCheckVersion() {
 pkgUpToDate() {
     echo "-- Checking if package is up to date..."
 
-    . $1/$PKGFILE
+    if [ -e "$1/$PKGFILE" ]; then
+        . $1/$PKGFILE
+    else
+        echo "Error: Could not find a $PKGFILE (up to date checK)"
+        exit 1
+    fi
+
     if [ -e "$1/$name-$version.$PKGEXT" ]; then
         return 1
     else
@@ -171,7 +182,12 @@ pkgRemove() {
         return 0
     fi
 
-    . $PKGINFO/$1/$PKGFILE
+    if [ -e "$PKGINFO/$1/$PKGFILE" ]; then
+        . $PKGINFO/$1/$PKGFILE
+    else
+        echo "Error: Could not find $PKGFILE associated with $1! This isn't good."
+        exit 1
+    fi
 
     #run pre-remove
     pre-remove
@@ -237,7 +253,13 @@ pkgBuild() {
     PKG=$1/work/pkg
     SRC=$1/work/src
 
-    . $1/$PKGFILE
+    if [ -e "$1/$PKGFILE" ]; then
+        . $1/$PKGFILE
+    else
+        echo "Error: Could not find $PKGFILE (build step)"
+        exit 1
+    fi
+
     pkgInfo
 
     # get sources
@@ -323,7 +345,12 @@ pkgInstall() {
         echo "Package $1 is up to date"
     fi
 
-    . $dir/$PKGFILE
+    if [ -e "$dir/$PKGFILE" ]; then
+        . $dir/$PKGFILE
+    else
+        echo "Error: Could not find $PKGFILE (install step)"
+        exit 1
+    fi
 
     #tell about dependancies
     echo "-- Dependancies:"
@@ -363,7 +390,13 @@ pkgDoInstall() {
     mkdir $PKGTMP
     if tar zxvf $1 -C $PKGTMP > $PKGTMP/footprint
     then
-        . $PKGTMP/$PKGFILE
+        if [ -e "$PKGTMP/$PKGFILE" ]; then
+            . $PKGTMP/$PKGFILE
+        else
+            echo "Error: gpack.tar.gz does not seem to be valid. Could not find $PKGFILE"
+            rm -Rf $PKGTMP
+            exit 1
+        fi
 
         # make sure package isn't already installed
         pkgInstalled $name

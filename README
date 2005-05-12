@@ -4,7 +4,8 @@ See COPYING for license details.
 
 !THIS PROJECT IS STILL IN ALPHA/BETA STAGE!
 
-See file "gpack.conf" for environment settings.
+See file "gpack.conf" for environment settings. By default GPack is set up
+to run from ~/projects/gpack.
 
 By default the package manager expects to be in ~/gpack-<version>/ (you can
 just `tar xzf gpack-<version>.tar.gz -C ~` to install it in the proper place).
