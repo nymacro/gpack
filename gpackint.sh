@@ -264,7 +264,7 @@ pkgBuild() {
     cd $SRC
 
     #build package
-    if build; then
+    if pkgBuild; then
         echo "Build Sucessful!"
         echo "Creating package..."
 
