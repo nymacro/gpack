@@ -2,7 +2,7 @@ GPack - GNU/Linux Package Manager (GPL)
 
 See COPYING for license details.
 
-!TESTING RELEASE!
+!THIS PROJECT IS STILL IN ALPHA/BETA STAGE!
 
 See file "gpack.conf" for environment settings.
 
@@ -33,24 +33,13 @@ To see all the commands available to gpack, run gpack without any
 arguments.
 
 
-DIRECTORY MEANINGS:
-_vfs    - Fake root file system (keeping host system clean when testing)
-_info   - Installed package information
-_root   - Package description/archive root
+Config Variable Meanings:
+    PKGVFS  - Fake root file system (keeping host system clean when testing)
+    PKGINFO - Installed package information
+    PKGROOT - Package description/archive root
 
-To change where the above directories are located, see "gpack.conf".
-_vfs    = PKGVFS
-_info   = PKGINFO
-_root   = PKGROOT
-
-PACKAGE MAIN CATEGORIES
-base    - base system packages
-devel   - development packages
-libs    - libraries
-daemons - daemons
-editors - editors
-network - network tools
-system  - system tools
-
+TODO:
+    - Online repositry syncronization.
+    - GUI Interface.
 
 Aaron 'nym' Marks 2005
