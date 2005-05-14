@@ -2,8 +2,16 @@ PKGBUILD Howto
 
 Sat May 14 04:31:50 UTC 2005
 
-This document will give all the details required to build your own PKGBUILD files
-and GPack packages.
+This document will give all the details required to build your own PKGBUILD
+files and GPack packages.
+
+REMEMBER: PKGBUILD files are specialised [ba]sh scripts, and therefore are
+constrained to the same syntax of the [ba]sh.
+
+WARNING: There are many [ba]sh variables which are accesible via the PKGBUILD
+file, these should not be modified in _any_ way. Doing so will most likely
+result in a corrupted package and possibly a modified base system.
+
 
 PKGBUILD BASIC STRUCTURE:
     GPACK SPECIAL VARIABLES:
@@ -11,7 +19,8 @@ PKGBUILD BASIC STRUCTURE:
         The directory where the source files were extracted.
 
     PKG
-        The directory where all files which are to be in the package are located.
+        The directory where all files which are to be in the package are
+	located.
 
     VARIABLES:
     name
@@ -34,10 +43,12 @@ PKGBUILD BASIC STRUCTURE:
 
         Dependancy Element Format:
             DependancyName >= version
-                A version requirement (above of equal) for dependancy DependancyName.
+                A version requirement (above of equal) for dependancy
+		DependancyName.
 
             DependancyName <= version
-                A version requirement (less than of equal) for dependancy DependancyName.
+                A version requirement (less than of equal) for dependancy
+		DependancyName.
 
             DependancyName
                 A simple dependancy without version requirements.
@@ -84,6 +95,22 @@ PACKAGE BUILD PROCESS:
 
     5. GPack then adds its own files to the directory $PKG before creating
     a tar.gz archive of the final package.
+
+
+STANDARD PACKAGE NAMING CONVENTION:
+    The standard package naming convention is:
+        name-version.gpack.tar.gz
+
+    If needed, the standard package naming convention will change to include
+    the package release in the name (eg. name-version-release.gpack.tar.gz).
+    Support for bz2 packages may also be added (to allow smaller packages).
+
+
+EXAMPLES:
+    For example of (non-functional) PKGBUILD file, see PKGBUILD.template.
+
+    *More working examples will be provided here, especially the PKGBUILD files
+    used by SatGNU GNU/Linux.*
 
 - nym
 
