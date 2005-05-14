@@ -1,0 +1,89 @@
+PKGBUILD Howto
+
+Sat May 14 04:31:50 UTC 2005
+
+This document will give all the details required to build your own PKGBUILD files
+and GPack packages.
+
+PKGBUILD BASIC STRUCTURE:
+    GPACK SPECIAL VARIABLES:
+    SRC
+        The directory where the source files were extracted.
+
+    PKG
+        The directory where all files which are to be in the package are located.
+
+    VARIABLES:
+    name
+        Package Name
+
+    version
+        Package Version
+
+    release
+        Package Release
+
+    license
+        Package/Program License
+
+    group
+        Package Group
+
+    depends
+        Array of required dependancies.
+
+        Dependancy Element Format:
+            DependancyName >= version
+                A version requirement (above of equal) for dependancy DependancyName.
+
+            DependancyName <= version
+                A version requirement (less than of equal) for dependancy DependancyName.
+
+            DependancyName
+                A simple dependancy without version requirements.
+
+    optdeps
+        Array of optional dependancies.
+
+    sources
+        Array of source files required to build the package.
+
+    FUNCTIONS:
+    build
+        The main function which actually constructs the package.
+
+    pre-install
+        A function which is ran before installing the package.
+
+    post-install
+        A function ran after a package is installed.
+
+    pre-remove
+        A function ran before a package is removed from the system.
+
+    post-remove
+        A function ran after the package has been removed from the system.
+
+
+PACKAGE BUILD PROCESS:
+    The package build process is quite simple and can be followed in 5
+    steps.
+
+    1. GPack will check for the required dependancies, handling
+    them appropriately.
+
+    2. GPack will check to see if the source files are available
+    locally (ie. if they have already been downloaded), if not GPack will
+    proceed to download them (using GNU wget).
+
+    3. GPack will extract any tar.gz and tar.bz2 files into the $SRC
+    directory and then change the current directory to $SRC.
+
+    4. GPack will then proceed to execute the function 'build', which will
+    build the package and install _all_ files prefixed with $PKG.
+
+    5. GPack then adds its own files to the directory $PKG before creating
+    a tar.gz archive of the final package.
+
+- nym
+
