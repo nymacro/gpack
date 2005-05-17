@@ -26,7 +26,10 @@
 ########################################################################
 
 #later on Sat system gpack.conf will be in absolute dir
-. ./gpack.conf
+if ! . ./gpack.conf ; then
+    echo "Could not find config file. Check GPack setup."
+    exit 1
+fi
 
 VERSION=0.8.0
 
@@ -101,7 +104,10 @@ pkgVersion() {
     pkgFind $1
     if [ "$?" == "1" ]; then
         if [ -e "$RETURN/$PKGFILE" ]; then
-            . $RETURN/$PKGFILE
+            if ! . $RETURN/$PKGFILE ; then
+                echo "Could not find version of package. $PKGFILE erroneus."
+                exit 1
+            fi
         else
             echo "Error: Could not find associated $PKGFILE (version check)"
             exit 1
@@ -159,7 +165,10 @@ pkgUpToDate() {
     echo "-- Checking if package is up to date..."
 
     if [ -e "$1/$PKGFILE" ]; then
-        . $1/$PKGFILE
+        if ! . $1/$PKGFILE ; then
+            echo "Could not check version. $PKGFILE erroneus."
+            exit 1
+        fi
     else
         echo "Error: Could not find a $PKGFILE (up to date checK)"
         exit 1
@@ -183,7 +192,10 @@ pkgRemove() {
     fi
 
     if [ -e "$PKGINFO/$1/$PKGFILE" ]; then
-        . $PKGINFO/$1/$PKGFILE
+        if ! . $PKGINFO/$1/$PKGFILE ; then
+            echo "Could not remove package. $PKGFILE erroneus."
+            exit 1
+        fi
     else
         echo "Error: Could not find $PKGFILE associated with $1! This isn't good."
         exit 1
@@ -254,7 +266,10 @@ pkgBuild() {
     SRC=$1/work/src
 
     if [ -e "$1/$PKGFILE" ]; then
-        . $1/$PKGFILE
+        if ! . $1/$PKGFILE ; then
+            echo "Build failed!"
+            exit 1
+        fi
     else
         echo "Error: Could not find $PKGFILE (build step)"
         exit 1
@@ -346,7 +361,10 @@ pkgInstall() {
     fi
 
     if [ -e "$dir/$PKGFILE" ]; then
-        . $dir/$PKGFILE
+        if ! . $dir/$PKGFILE ; then
+            echo "Could not install package. $PKGFILE erroneus."
+            exit 1
+        fi
     else
         echo "Error: Could not find $PKGFILE (install step)"
         exit 1
@@ -391,7 +409,10 @@ pkgDoInstall() {
     if tar zxvf $1 -C $PKGTMP > $PKGTMP/footprint
     then
         if [ -e "$PKGTMP/$PKGFILE" ]; then
-            . $PKGTMP/$PKGFILE
+            if ! . $PKGTMP/$PKGFILE ; then
+                echo "Could not install package. $PKGFILE erroneus."
+                exit 1
+            fi
         else
             echo "Error: gpack.tar.gz does not seem to be valid. Could not find $PKGFILE"
             rm -Rf $PKGTMP
@@ -479,7 +500,10 @@ pkgDepInstall() {
         exit 1
     fi
 
-    . $dir/$PKGFILE
+    if ! . $dir/$PKGFILE ; then
+        echo "Could not install dependancies. Corrupt $PKGFILE found ($dir)"
+        exit 1
+    fi
 
     echo "-- Package group: $group"
 
