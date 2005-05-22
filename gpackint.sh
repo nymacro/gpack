@@ -296,6 +296,8 @@ pkgBuild() {
         bz2)
             tar xjf $SRCFILE -C $SRC
             ;;
+        *)
+            cp $SRCFILE $SRC
         esac
     done
     cd $SRC
