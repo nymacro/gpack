@@ -298,6 +298,7 @@ pkgBuild() {
             ;;
         *)
             cp $SRCFILE $SRC
+            ;;
         esac
     done
     cd $SRC
