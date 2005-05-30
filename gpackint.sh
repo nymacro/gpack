@@ -48,6 +48,7 @@ fi
 
 #Filename for package build descriptor
 PKGFILE=PKGBUILD
+#PKGFILE=Pkgfile
 
 #Package extension
 PKGEXT=gpack.tar.gz
@@ -245,7 +246,7 @@ pkgInfo() {
     echo
 
     echo "source files:"
-    for i in "${sources[@]}"; do
+    for i in "${source[@]}"; do
         echo "  $i"
     done
     echo
@@ -265,6 +266,9 @@ pkgBuild() {
     PKG=$1/work/pkg
     SRC=$1/work/src
 
+    PKGMK_SOURCE_DIR=$1
+    PKGMK_PACKAGE_DIR=$1
+
     if [ -e "$1/$PKGFILE" ]; then
         if ! . $1/$PKGFILE ; then
             echo "Build failed!"
@@ -279,9 +283,10 @@ pkgBuild() {
 
     # get sources
     cd $1
-    for i in "${sources[@]}"; do
+    for i in "${source[@]}"; do
         local SRCFILE=`echo $i | sed 's|.*/||'`
         local EXT=`echo $SRCFILE | sed 's/.*\.//'`
+        echo "EXTENSION: --- $EXT"
         if [ ! -e "$SRCFILE" ]; then
             if ! wget $i ; then
                 echo "ERROR: Could not download source file '$i'"
@@ -290,11 +295,14 @@ pkgBuild() {
         fi
 
         case $EXT in
-        gz)
+        gz | tgz)
             tar xzf $SRCFILE -C $SRC
             ;;
         bz2)
             tar xjf $SRCFILE -C $SRC
+            ;;
+        zip)
+            unzip $SRCFILE
             ;;
         *)
             cp $SRCFILE $SRC

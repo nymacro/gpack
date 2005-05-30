@@ -3,9 +3,9 @@ version=0.0.0
 release=1
 license=license-name
 group=group/name
+source=(list of source files)
 depends=("dependancy >= 1.0.0" "anotherdep")
 optdeps=("something")
-sources=(list of source files)
 
 build() {
     cd somesourcedir

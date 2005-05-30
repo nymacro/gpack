@@ -56,7 +56,7 @@ PKGBUILD BASIC STRUCTURE:
     optdeps
         Array of optional dependancies.
 
-    sources
+    source
         Array of source files required to build the package.
 
     FUNCTIONS:
