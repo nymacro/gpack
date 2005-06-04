@@ -47,11 +47,11 @@ if [ ! -e "$PKGROOT" ]; then
 fi
 
 #Filename for package build descriptor
-PKGFILE=PKGBUILD
+PKGFILE=SATPKG
 #PKGFILE=Pkgfile
 
 #Package extension
-PKGEXT=gpack.tar.gz
+PKGEXT=satpkg.tar.gz
 
 #Return value for different functions
 RETURN=
