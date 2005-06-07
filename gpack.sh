@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.4 2005/06/07 13:04:46 nymacro Exp $
+# $Id: gpack.sh,v 1.5 2005/06/07 13:25:44 nymacro Exp $
 
 # CONFIGURATION
 VERSION=0.9.0
@@ -250,7 +250,8 @@ pkg_build() {
 
     # build
     echo "Build"
-    if ! (cd $SRC && build > $PKG_LOG) ; then
+    #if ! (cd $SRC && build > $PKG_LOG) ; then
+    if ! (cd $SRC && build) ; then
 	rm -rf $WORK
 	error "'build' failed"
     fi
@@ -319,12 +320,12 @@ pkg_install() {
 
 	# match footprint
 	local INSTOK=0
-	for i in `cat $PKG_CONF_DIR/$name/footprint | awk '{print $5;}'`; do
+	for i in `cat footprint | awk '{print $5;}'`; do
 	    if [ -e "$PKG_ROOT_DIR/$i" ]; then
                 if [ ! -d "$PKG_ROOT_DIR/$i" ]; then
 		    warn "File already exists on system ($i)"
+		    INSTOK=1
                 fi
-		INSTOK=1
 	    fi
 	done
 
@@ -338,9 +339,8 @@ pkg_install() {
 	mv $PKG_FILE $PKG_CONF_DIR/$name/
 	mv footprint $PKG_CONF_DIR/$name/
 
-
 	# install the files
-	mv $TMP/pkg/* $PKG_ROOT_DIR
+	cp -r $TMP/pkg/* $PKG_ROOT_DIR
 
 	# run post install
 	post_install
@@ -368,9 +368,9 @@ pkg_remove() {
         # remove
 	for i in `cat $PKG_CONF_DIR/$1/footprint | awk '{print $5;}' | sort -r`; do
 	    if [ -d "$PKG_ROOT_DIR/$i" ]; then
-		rmdir $PKG_ROOT_DIR/$i
+		rmdir $PKG_ROOT_DIR/$i > /dev/null 2>&1
 	    else
-		rm $PKG_ROOT_DIR/$i
+		rm $PKG_ROOT_DIR/$i > /dev/null 2>&1
 	    fi
 	done
 	
