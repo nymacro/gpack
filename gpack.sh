@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.1 2005/06/07 00:59:36 nymacro Exp $
+# $Id: gpack.sh,v 1.2 2005/06/07 12:26:43 nymacro Exp $
 
 # CONFIGURATION
 VERSION=0.9.0
@@ -245,7 +245,7 @@ pkg_build() {
 		    cp $SRC_FILE $SRC
 		    ;;
 	    esac
-	)
+	) || error "Extracting source"
     done
 
     # build
@@ -324,19 +324,24 @@ pkg_install() {
 	pre_install
 
 	# match footprint
+	local INSTOK=0
 	for i in `cat $PKG_CONF_DIR/$name/footprint | awk '{print $5;}'`; do
-	    echo $i
-	    if [ -e "$i" ]; then
-		error "File already exist on system"
+	    if [ -e "$PKG_ROOT_DIR/$i" ]; then
+		warn "File already exists on system ($i)"
+		INSTOK=1
 	    fi
 	done
+
+	if [ "$INSTOK" == "1" ]; then
+	    error "Aborted install"
+	fi
 
 	# install the files
 	mv $TMP/pkg/* $PKG_ROOT_DIR
 
 	# run post install
 	post_install
-    )
+    ) || exit 1
 
     rm -rf $TMP
 
@@ -370,7 +375,7 @@ pkg_remove() {
 	
         # remove installation info
 	rm -r $PKG_CONF_DIR/$1
-    )
+    ) || exit 1
     echo "Removed $1"
 }
 
@@ -412,5 +417,5 @@ pkg_depinst() {
 	    fi
 	fi
 	pkg_install "$1/$name-$version-$release.$PKG_EXTENSION"
-    )
+    ) || exit 1
 }
