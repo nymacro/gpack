@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.5 2005/06/07 13:25:44 nymacro Exp $
+# $Id: gpack.sh,v 1.6 2005/06/07 14:34:07 nymacro Exp $
 
 # CONFIGURATION
 VERSION=0.9.0
@@ -63,7 +63,7 @@ warn() {
 # Name: pkg_find <package name>
 # Desc: Find and return package location
 pkg_find() {
-    local found=`find $PKG_FILE_DIR -name "$1" -type d`
+    local found=`find $PKG_FILE_DIR -name "$1" -type d -not -name work`
     if [ -d "$found" ]; then
 	# return success!
 	echo "$found"
@@ -175,13 +175,13 @@ pkg_build() {
     fi
 
     # make sure that the needed variables exist
-    if [ $name == "" ]; then
+    if [ "$name" == "" ]; then
 	error "'name' not specified"
     fi
-    if [ $version == "" ]; then
+    if [ "$version" == "" ]; then
 	error "'version' not specified"
     fi
-    if [ $release == "" ]; then
+    if [ "$release" == "" ]; then
 	error "'release' not specified"
     fi
 
