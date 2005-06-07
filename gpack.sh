@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.3 2005/06/07 13:00:04 nymacro Exp $
+# $Id: gpack.sh,v 1.4 2005/06/07 13:04:46 nymacro Exp $
 
 # CONFIGURATION
 VERSION=0.9.0
@@ -314,12 +314,6 @@ pkg_install() {
 	    fi
 	done
 
-	#
-	mkdir $PKG_CONF_DIR/$name
-
-	mv $PKG_FILE $PKG_CONF_DIR/$name/
-	mv footprint $PKG_CONF_DIR/$name/
-
 	# run pre-install
 	pre_install
 
@@ -337,6 +331,13 @@ pkg_install() {
 	if [ "$INSTOK" == "1" ]; then
 	    error "Aborted install"
 	fi
+
+	#
+	mkdir $PKG_CONF_DIR/$name
+
+	mv $PKG_FILE $PKG_CONF_DIR/$name/
+	mv footprint $PKG_CONF_DIR/$name/
+
 
 	# install the files
 	mv $TMP/pkg/* $PKG_ROOT_DIR
