@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.2 2005/06/07 12:26:43 nymacro Exp $
+# $Id: gpack.sh,v 1.3 2005/06/07 13:00:04 nymacro Exp $
 
 # CONFIGURATION
 VERSION=0.9.0
@@ -327,7 +327,9 @@ pkg_install() {
 	local INSTOK=0
 	for i in `cat $PKG_CONF_DIR/$name/footprint | awk '{print $5;}'`; do
 	    if [ -e "$PKG_ROOT_DIR/$i" ]; then
-		warn "File already exists on system ($i)"
+                if [ ! -d "$PKG_ROOT_DIR/$i" ]; then
+		    warn "File already exists on system ($i)"
+                fi
 		INSTOK=1
 	    fi
 	done
