@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.6 2005/06/07 14:34:07 nymacro Exp $
+# $Id: gpack.sh,v 1.7 2005/06/10 10:38:42 nymacro Exp $
 
 # CONFIGURATION
 VERSION=0.9.0
@@ -111,6 +111,11 @@ pkg_info() {
     for i in "${optdeps[@]}"; do
 	echo "    $i"
     done
+
+    echo "conflicts:"
+    for i in "${conflicts[@]}"; do
+	echo "    $i"
+    done
 }
 
 # Name: pkg_meets <package criteria>
@@ -185,6 +190,12 @@ pkg_build() {
 	error "'release' not specified"
     fi
 
+    # check to see if the package already exists
+    if [ -e "$1/$name-$version-$release.$PKG_EXTENSION" ]; then
+	warn "Package already built ($name)"
+	return 0
+    fi
+
     # check dependancies
     for i in "${depends[@]}"; do
 	if ! pkg_meets $i; then
@@ -195,6 +206,12 @@ pkg_build() {
     for i in "${optdeps[@]}"; do
 	if ! pkg_meets $i; then
 	    warn "Optional dependancy not installed."
+	fi
+    done
+
+    for i in "${conflicts[@]}"; do
+	if pkg_meets $i; then
+	    error "Conflicting packages ($i)"
 	fi
     done
 
@@ -299,7 +316,8 @@ pkg_install() {
 	fi
 
 	if pkg_installed $name ; then
-	    error "Package already installed"
+	    echo "ERROR: Package already installed ($name)"
+	    return 0
 	fi
 
         # check dependancies
@@ -312,6 +330,13 @@ pkg_install() {
 	for i in "${optdeps[@]}"; do
 	    if ! pkg_meets $i; then
 		warn "Optional dependancy not installed."
+	    fi
+	done
+
+
+	for i in "${conflicts[@]}"; do
+	    if pkg_meets $i; then
+		error "Conflicting packages ($i)"
 	    fi
 	done
 
@@ -333,14 +358,23 @@ pkg_install() {
 	    error "Aborted install"
 	fi
 
+	# install the files
+	#cp -r $TMP/pkg/* $PKG_ROOT_DIR
+	for i in `cat footprint | awk '{print $5;}'`; do
+	    if [ -d "$TMP/pkg/$i" ]; then
+		if [ ! -d "$PKG_ROOT_DIR/pkg/$i" ]; then
+		    mkdir -p $PKG_ROOT_DIR/$i
+		fi
+	    else
+		mv $TMP/pkg/$i $PKG_ROOT_DIR/$i
+	    fi
+	done
+
 	#
 	mkdir $PKG_CONF_DIR/$name
 
 	mv $PKG_FILE $PKG_CONF_DIR/$name/
 	mv footprint $PKG_CONF_DIR/$name/
-
-	# install the files
-	cp -r $TMP/pkg/* $PKG_ROOT_DIR
 
 	# run post install
 	post_install
@@ -409,6 +443,12 @@ pkg_depinst() {
 	for i in "${optdeps[@]}"; do
 	    if ! pkg_meets $i; then
 		warn "Optional dependancy not installed."
+	    fi
+	done
+
+	for i in "${conflicts[@]}"; do
+	    if pkg_meets $i; then
+		error "Conflicting packages ($i)"
 	    fi
 	done
 	
