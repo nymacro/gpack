@@ -2,45 +2,41 @@ GPack - GNU/Linux Package Manager (GPL)
 
 See COPYING for license details.
 
-!THIS PROJECT IS STILL IN ALPHA/BETA STAGE!
+GPack is a simple but flexible package manager for GNU/Linux based systems
+(but could be utilized on other systems which have standard GNU tools and
+run GNU bash).
 
-See file "gpack.conf" for environment settings. By default GPack is set up
-to run from ~/projects/gpack.
+GPack aims to provide a simple, but flexible automated package building,
+installation and management system. It aims to greatly reduce the work
+required for building packages, while still giving the packager the power
+required to complete the job successfully.
 
-By default the package manager expects to be in ~/gpack-<version>/ (you can
-just `tar xzf gpack-<version>.tar.gz -C ~` to install it in the proper place).
-Another option is to edit gpack.conf file located in the extracted directory.
+SETTING UP GPACK:
+    You need to make sure that your gpack.conf file is modified for your
+    system.
 
-The script "gpack" is the public package manager interface. Make it
-executable (`chmod +x gpack`) or use it as an argument to sh
-(`sh gpack`).
+    PKG_FILE_DIR - The directory containing the package and descriptors.
+    PKG_CONF_DIR - The directory containing the installed package info.
+    PKG_ROOT_DIR - The root installation directory for GPack install.
+    PKG_LOG      - Log file for GPack builds (and other operations).
 
-Two example packages are provided, one a plain test package, the other
-an actual working package. These packages are:
-    io  - A small prototype based object-oriented prorgamming language
-          released under the BSD license. There is no particular reason
-          i chose this package, but i should have chose something under
-          GPL which suits Sat GNU/Linux' philosophy more.
-    test- A plain test package which doesn't do much.
+BASIC USAGE:
+    To build a package, simply run the following:
+        ./gpack build packagename
 
-To install on of these packages (or other packages you may want), use
-the following command:
-    gpack install <package name>
+    To install a package, simply run:
+        ./gpack install packagename
 
-To remove the package, run:
-    gpack remove <package name>
+    To remove a package:
+        ./gpack remove packagename
 
-To see all the commands available to gpack, run gpack without any
-arguments.
-
-
-Config Variable Meanings:
-    PKGVFS  - Fake root file system (keeping host system clean when testing)
-    PKGINFO - Installed package information
-    PKGROOT - Package description/archive root
-
-TODO:
-    - Online repositry syncronization.
-    - GUI Interface.
+TOOLS REQUIRED TO RUN GPACK:
+    bash
+    binutils
+    findutils
+    coreutils
+    wget
+    sed
+    awk
 
 Aaron 'nym' Marks 2005

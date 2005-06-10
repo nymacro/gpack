@@ -1,26 +1,33 @@
-PKGBUILD Howto
+GPack Packages Howto
 
-Sat May 14 04:31:50 UTC 2005
+$ Id: $
 
-This document will give all the details required to build your own PKGBUILD
+This document will give all the details required to build your own SATPKG
 files and GPack packages.
 
-REMEMBER: PKGBUILD files are specialised [ba]sh scripts, and therefore are
+REMEMBER: SATPKG files are specialised [ba]sh scripts, and therefore are
 constrained to the same syntax of the [ba]sh.
 
-WARNING: There are many [ba]sh variables which are accesible via the PKGBUILD
+WARNING: There are many [ba]sh variables which are accesible via the SATPKG
 file, these should not be modified in _any_ way. Doing so will most likely
 result in a corrupted package and possibly a modified base system.
 
 
-PKGBUILD BASIC STRUCTURE:
-    GPACK SPECIAL VARIABLES:
+SATPKG BASIC STRUCTURE:
+    GPACK SPECIAL VARIABLES (DO NOT CHANGE!):
     SRC
         The directory where the source files were extracted.
 
     PKG
         The directory where all files which are to be in the package are
 	located.
+
+    PKGMK_SOURCE_DIR
+        This variable is present to ensure that GPack can build CRUX
+        packages.
+
+    PKGMK_PACKAGE_DIR
+        See PKGMK_SOURCE_DIR
 
     VARIABLES:
     name
@@ -32,13 +39,13 @@ PKGBUILD BASIC STRUCTURE:
     release
         Package Release
 
-    license
+    license (optional)
         Package/Program License
 
-    group
+    group (optional)
         Package Group
 
-    depends
+    depends (optional)
         Array of required dependancies.
 
         Dependancy Element Format:
@@ -53,26 +60,26 @@ PKGBUILD BASIC STRUCTURE:
             DependancyName
                 A simple dependancy without version requirements.
 
-    optdeps
+    optdeps (optional)
         Array of optional dependancies.
 
-    source
+    source (optional)
         Array of source files required to build the package.
 
     FUNCTIONS:
     build
         The main function which actually constructs the package.
 
-    pre-install
+    pre_install (optional)
         A function which is ran before installing the package.
 
-    post-install
+    post_install (optional)
         A function ran after a package is installed.
 
-    pre-remove
+    pre_remove (optional)
         A function ran before a package is removed from the system.
 
-    post-remove
+    post_remove (optional)
         A function ran after the package has been removed from the system.
 
 
@@ -107,9 +114,9 @@ STANDARD PACKAGE NAMING CONVENTION:
 
 
 EXAMPLES:
-    For example of (non-functional) PKGBUILD file, see PKGBUILD.template.
+    For example of (non-functional) SATPKG file, see SATPKG.template
 
-    *More working examples will be provided here, especially the PKGBUILD files
+    *More working examples will be provided here, especially the SATPKG files
     used by SatGNU GNU/Linux.*
 
 - nym

@@ -1,0 +1,45 @@
+name=packagename
+version=0.0.0
+release=1
+
+# optional
+license=license
+# optional
+group=group
+
+source=(http://some/source/file somelocalfile)
+
+# optional
+depends=("binutils >= 0.0" "coreutils")
+# optional
+optdeps=("libpcre" "gnome-vfs >= 0.0")
+# optional
+conflicts=("something <= 1.4" "somepackage")
+
+build() {
+    cd $name-$version
+    ./configure --prefix=/usr
+    make
+    make DESTDIR=$PKG install
+}
+
+# optional
+pre_install() {
+    echo
+}
+
+# optional
+post_install() {
+    echo
+}
+
+# optional
+pre_remove() {
+    echo
+}
+
+# optional
+post_remove() {
+    echo
+}
+
