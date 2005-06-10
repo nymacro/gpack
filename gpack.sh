@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.7 2005/06/10 10:38:42 nymacro Exp $
+# $Id: gpack.sh,v 1.8 2005/06/10 11:51:47 nymacro Exp $
 
 # CONFIGURATION
 VERSION=0.9.0
@@ -63,7 +63,7 @@ warn() {
 # Name: pkg_find <package name>
 # Desc: Find and return package location
 pkg_find() {
-    local found=`find $PKG_FILE_DIR -name "$1" -type d -not -name work`
+    local found=`find $PKG_FILE_DIR -maxdepth 2 -name "$1" -type d -not -name work`
     if [ -d "$found" ]; then
 	# return success!
 	echo "$found"
@@ -248,7 +248,7 @@ pkg_build() {
 	# copy/extract files
 	(
 	    cd $1 &&
-	    case `echo $SRC_FILE | sed -e "s/.*\.//"` in
+	    case `echo $SRC_FILE | sed -e 's/.*\.//'` in
 		gz | tgz)
 		    tar xzf $SRC_FILE -C $SRC
 		    ;;
@@ -265,6 +265,31 @@ pkg_build() {
 	) || error "Extracting source"
     done
 
+    # check checksum of source files
+    if [ -e "$1/checksum" ]; then
+	echo "Checking source integrity..."
+	for i in "${source[@]}"; do
+	    local SRC_FILE=`echo $i | sed 's|.*/||'`
+	    local CHKSUM=`cat $1/checksum | grep $SRC_FILE | awk '{print $1;}'`
+	    local FILE_CHKSUM=`(cd $1; md5sum $SRC_FILE) | awk '{print $1;}'`
+	    if [ ! "$FILE_CHKSUM" == "$CHKSUM" ]; then
+		echo "MD5 Mismatch ($SRC_FILE)"
+		echo "Checksum:  $CHKSUM"
+		echo "Should be: $FILE_CHKSUM"
+		rm -rf $WORK
+		exit 1
+	    fi
+	done
+    else
+	echo "Generating checksum for source files..."
+	for i in "${source[@]}"; do
+	    local SRC_FILE=`echo $i | sed 's|.*/||'`
+	    local CHKSUM=`md5sum $1/$SRC_FILE`
+	    local MD5=`echo $CHKSUM | awk '{print $1;}'`
+	    echo "$MD5 $SRC_FILE" >> $1/checksum
+	done
+    fi
+
     # build
     echo "Build"
     #if ! (cd $SRC && build > $PKG_LOG) ; then
@@ -279,7 +304,7 @@ pkg_build() {
     cp $1/$PKG_FILE $PKG_BASE
 
     # create package footprint
-    STAT_FORMAT='%B %a %U %G %n'
+    STAT_FORMAT='%b %a %U %G %n'
     for i in `find $PKG`; do
 	stat -c "$STAT_FORMAT" $i | sed "s|$PKG||" >> $PKG_BASE/footprint
     done
