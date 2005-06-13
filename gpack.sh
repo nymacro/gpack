@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.9 2005/06/10 12:45:14 nymacro Exp $
+# $Id: gpack.sh,v 1.10 2005/06/13 11:31:01 nymacro Exp $
 
 ########################################################################
 #
@@ -485,7 +485,9 @@ pkg_depinst() {
         # check dependancies
 	for i in "${depends[@]}"; do
 	    if ! pkg_meets $i; then
-		pkg_depinst `pkg_find $i`
+		if ! (depends=(); conflicts=(); optdeps=(); pkg_depinst `pkg_find $i`); then
+		    error "Installing dependancies"
+		fi
 	    fi
 	done
 	
