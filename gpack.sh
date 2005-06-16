@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.10 2005/06/13 11:31:01 nymacro Exp $
+# $Id: gpack.sh,v 1.11 2005/06/16 12:37:44 nymacro Exp $
 
 ########################################################################
 #
@@ -271,11 +271,22 @@ pkg_build() {
 	(
 	    cd $1 &&
 	    case `echo $SRC_FILE | sed -e 's/.*\.//'` in
-		gz | tgz)
+		gz)
+		    if (echo $SRC_FILE | grep 'tar'); then
+			tar xzf $SRC_FILE -C $SRC
+		    else
+			(cp $SRC_FILE $SRC && cd $SRC && gunzip $SRC_FILE)
+		    fi
+		    ;;
+		tgz)
 		    tar xzf $SRC_FILE -C $SRC
 		    ;;
 		bz2)
-		    tar xjf $SRC_FILE -C $SRC
+		    if (echo $SRC_FILE | grep 'tar'); then
+			tar xjf $SRC_FILE -C $SRC
+		    else
+			(cp $SRC_FILE $SRC && cd $SRC && bunzip2 $SRC_FILE)
+		    fi
 		    ;;
 		zip)
 		    unzip $SRC_FILE -d $SRC
