@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.11 2005/06/16 12:37:44 nymacro Exp $
+# $Id: gpack.sh,v 1.12 2005/06/30 13:18:47 nymacro Exp $
 
 ########################################################################
 #
@@ -34,18 +34,31 @@ if ! . ./gpack.conf ; then
     exit 1
 fi
 
-# Package descriptor repositry
-#PKG_FILE_DIR=/home/nym/projects/gpack-clean/packages
-# Installed package configuration dir
-#PKG_CONF_DIR=/home/nym/projects/gpack-clean/config
-# Root filesystem to install packages
-#PKG_ROOT_DIR=/home/nym/projects/gpack-clean/root
-# Build log
-#PKG_LOG=/home/nym/projects/gpack-clean/build.log
+# create dirs if not exist
+if [ ! -d "$PKG_CONF_DIR" ]; then
+    echo "Creating configuration directory"
+    mkdir -p $PKG_CONF_DIR
+fi
 
-# Name of package build descriptor
-#PKG_FILE=SATPKG
-#PKG_EXTENSION=satpkg.tar.gz
+if [ ! -d "$PKG_FILE_DIR" ]; then
+    echo "Creating descriptor directory"
+    mkdir -p $PKG_FILE_DIR
+fi
+
+if [ ! -d "$PKG_ROOT_DIR" ]; then
+    echo "Creating root directory"
+    mkdir -p $PKG_ROOT_DIR
+fi
+
+if [ ! -d "$PKG_SOURCE_DIR" ]; then
+    echo "Creating source file directory"
+    mkdir -p $PKG_SOURCE_DIR
+fi
+
+if [ ! -d "$PKG_PACKAGE_DIR" ]; then
+    echo "Creating binary package directory"
+    mkdir -p $PKG_PACKAGE_DIR
+fi
 
 ########
 # FUNCTIONS
@@ -80,6 +93,14 @@ error() {
 # Desc: Warn the user about something.
 warn() {
     echo "WARNING: $1"
+}
+
+# Name: verbose <message>
+# Desc: Print message on screen only when verbose is specified
+verbose() {
+    if [ ! "$VERBOSE" == "" ]; then
+	echo $1
+    fi
 }
 
 # Name: pkg_find <package name>
@@ -213,7 +234,7 @@ pkg_build() {
     fi
 
     # check to see if the package already exists
-    if [ -e "$1/$name-$version-$release.$PKG_EXTENSION" ]; then
+    if [ -e "$PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION" ]; then
 	warn "Package already built ($name)"
 	return 0
     fi
@@ -250,48 +271,57 @@ pkg_build() {
 	rm -rf $WORK
     fi
 
-    mkdir $WORK
-    mkdir $SRC
-    mkdir $PKG_BASE
-    mkdir $PKG
+    mkdir -p $WORK
+    mkdir -p $SRC
+    mkdir -p $PKG_BASE
+    mkdir -p $PKG
 
-    local PKGMK_SOURCE_DIR=$1
+    # set up variable for CRUX compatibility
+    local PKGMK_SOURCE_DIR=$PKG_SOURCE_DIR
 
     # make sure source is available
-    echo 'Getting source'
+    verbose 'Getting source'
     for i in "${source[@]}"; do
 	local SRC_FILE=`echo $i | sed 's|.*/||'`
-	if [ ! -e "$1/$SRC_FILE" ]; then
-	    if ! (cd $1 && wget $i); then
+	verbose "Checking for $SRC_FILE"
+	if [ ! -e "$PKG_SOURCE_DIR/$SRC_FILE" ]; then
+	    if ! (cd $PKG_SOURCE_DIR && wget $i); then
 		error "Failed to retrieve source."
 	    fi
 	fi
 
 	# copy/extract files
 	(
-	    cd $1 &&
+	    cd $PKG_SOURCE_DIR &&
 	    case `echo $SRC_FILE | sed -e 's/.*\.//'` in
 		gz)
 		    if (echo $SRC_FILE | grep 'tar'); then
+			verbose "Extracting tar.gz"
 			tar xzf $SRC_FILE -C $SRC
 		    else
+			verbose "Extracting gz"
 			(cp $SRC_FILE $SRC && cd $SRC && gunzip $SRC_FILE)
 		    fi
 		    ;;
 		tgz)
+		    verbose "Extracting tgz"
 		    tar xzf $SRC_FILE -C $SRC
 		    ;;
 		bz2)
 		    if (echo $SRC_FILE | grep 'tar'); then
+			verbose "Extracting tar.bz2"
 			tar xjf $SRC_FILE -C $SRC
 		    else
+			verbose "Extracting bz2"
 			(cp $SRC_FILE $SRC && cd $SRC && bunzip2 $SRC_FILE)
 		    fi
 		    ;;
 		zip)
+		    verbose "Extracting zip"
 		    unzip $SRC_FILE -d $SRC
 		    ;;
 		*)
+		    verbose "Copying to $SRC"
 		    cp $SRC_FILE $SRC
 		    ;;
 	    esac
@@ -299,12 +329,13 @@ pkg_build() {
     done
 
     # check checksum of source files
+    verbose "Checking MD5 sums"
     if [ -e "$1/checksum" ]; then
 	echo "Checking source integrity..."
 	for i in "${source[@]}"; do
 	    local SRC_FILE=`echo $i | sed 's|.*/||'`
 	    local CHKSUM=`cat $1/checksum | grep $SRC_FILE | awk '{print $1;}'`
-	    local FILE_CHKSUM=`(cd $1; md5sum $SRC_FILE) | awk '{print $1;}'`
+	    local FILE_CHKSUM=`(cd $PKG_SOURCE_DIR; md5sum $SRC_FILE) | awk '{print $1;}'`
 	    if [ ! "$FILE_CHKSUM" == "$CHKSUM" ]; then
 		echo "MD5 Mismatch ($SRC_FILE)"
 		echo "Checksum:  $CHKSUM"
@@ -317,26 +348,27 @@ pkg_build() {
 	echo "Generating checksum for source files..."
 	for i in "${source[@]}"; do
 	    local SRC_FILE=`echo $i | sed 's|.*/||'`
-	    local CHKSUM=`md5sum $1/$SRC_FILE`
+	    local CHKSUM=`md5sum $PKG_SOURCE_DIR/$SRC_FILE`
 	    local MD5=`echo $CHKSUM | awk '{print $1;}'`
 	    echo "$MD5 $SRC_FILE" >> $1/checksum
 	done
     fi
 
     # build
-    echo "Build"
-    #if ! (cd $SRC && build > $PKG_LOG) ; then
+    verbose "Build"
     if ! (cd $SRC && build) ; then
 	rm -rf $WORK
 	error "'build' failed"
     fi
 
     # build package
-    echo 'Creating package'
+    verbose 'Creating package'
 
+    verbose "$1/$PKG_FILE $PKG_BASE"
     cp $1/$PKG_FILE $PKG_BASE
 
     # create package footprint
+    verbose "Creating footprint"
     STAT_FORMAT='%b %a %U %G %n'
     for i in `find $PKG`; do
 	stat -c "$STAT_FORMAT" $i | sed "s|$PKG||" >> $PKG_BASE/footprint
@@ -346,15 +378,20 @@ pkg_build() {
     echo "GPack $VERSION " `date` > $PKG_BASE/info
 
     # archive
-    if (cd $PKG_BASE && tar czf $1/$name-$version-$release.$PKG_EXTENSION *) ; then
+    verbose "Creating package archive"
+    if (cd $PKG_BASE && tar czf $PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION *) ; then
 	echo "Package created"
     else
 	error "Failed to create package"
     fi
 
+    verbose "Displaying footprint"
     cat $PKG_BASE/footprint
 
+    verbose "Cleaning up"
     rm -rf $WORK
+
+    echo "Package created successfully!"
 }
 
 # Name: pkg_install <package file>
@@ -375,7 +412,9 @@ pkg_install() {
 
 	if pkg_installed $name ; then
 	    echo "ERROR: Package already installed ($name)"
-	    return 0
+	    if [ ! "$FORCE_OVERWRITE" == "yes" ]; then
+		return 1
+	    fi
 	fi
 
         # check dependancies
@@ -489,6 +528,15 @@ pkg_installed() {
 # Desc: Install package & all dependancies
 pkg_depinst() {
     (
+	# clean up package environment (needed)
+	name=''
+	version=''
+	group=''
+	license=''
+	depends=()
+	optdeps=()
+	conflicts=()
+
 	if ! . $1/$PKG_FILE ; then
 	    error "Could not find package config"
 	fi

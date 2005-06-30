@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Interface
-# $Id: gpack,v 1.6 2005/06/10 12:45:14 nymacro Exp $
+# $Id: gpack,v 1.7 2005/06/30 13:18:47 nymacro Exp $
 
 ########################################################################
 #
@@ -41,7 +41,7 @@ case $1 in
 	;;
     "install" | "in")
 	for i in "${ARGS[@]}"; do
-	    pkg_install `pkg_find $i`/$i*.$PKG_EXTENSION
+	    pkg_install $PKG_PACKAGE_DIR/$i*.$PKG_EXTENSION
 	done
 	;;
     "remove" | "rm")
@@ -71,7 +71,7 @@ case $1 in
 	;;
     "clean")
 	for i in "${ARGS[@]}"; do
-	    rm `pkg_find $i`/$i*.$PKG_EXTENSION
+	    rm $PKG_PACKAGE_DIR/$i*.$PKG_EXTENSION
 	done
 	;;
     "rebuild")
