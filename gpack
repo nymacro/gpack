@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Interface
-# $Id: gpack,v 1.7 2005/06/30 13:18:47 nymacro Exp $
+# $Id: gpack,v 1.8 2005/07/01 02:50:24 nymacro Exp $
 
 ########################################################################
 #
@@ -34,33 +34,32 @@ ARGS=(`echo $@`)
 unset ARGS[0]
 
 case $1 in
-    "build" | "bd")
+    "build")
 	for i in "${ARGS[@]}"; do
 	    pkg_build `pkg_find $i`
 	done
 	;;
-    "install" | "in")
+    "install")
 	for i in "${ARGS[@]}"; do
-	    pkg_install $PKG_PACKAGE_DIR/$i*.$PKG_EXTENSION
+	    pkg_install `pkg_find_bin $i`
 	done
 	;;
-    "remove" | "rm")
+    "remove")
 	for i in "${ARGS[@]}"; do
 	    pkg_remove $i
 	done
 	;;
-    "depinst" | "di")
+    "depinst")
 	for i in "${ARGS[@]}"; do
-	    pkg_depinst `pkg_find $i`
+	    pkg_depinst `pkg_find_bin $i`
 	done
-	
 	;;
-    "info" | "if")
+    "info")
 	for i in "${ARGS[@]}"; do
 	    pkg_info `pkg_find $i`
 	done
 	;;
-    "sync" | "sy")
+    "sync")
 	echo "Syncing packages not implemented yet"
 	;;
     "list")
@@ -86,8 +85,8 @@ case $1 in
 	done
 	;;
     *)
-	echo "GPack $VERSION - Aaron Marks 2005"
-	echo "usage:  $0 <command> <argument> [<argument>*]"
+	echo "GPack $VERSION - Aaron Marks 2005 - See COPYING for license details"
+	echo "usage:  $0 <command> [<argument>*]"
 	echo "    commands:"
 	echo "        build     build package"
 	echo "        install   install package"
@@ -96,5 +95,8 @@ case $1 in
 	echo "        info      print package information"
 	echo "        list      list available packages"
 	echo "        installed list installed packages"
+	echo "        find      find package"
+	echo "        rebuild   build a package from scratch"
+	echo "        clean     clean up a package"
 	;;
 esac

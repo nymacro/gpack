@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.12 2005/06/30 13:18:47 nymacro Exp $
+# $Id: gpack.sh,v 1.13 2005/07/01 02:50:24 nymacro Exp $
 
 ########################################################################
 #
@@ -26,11 +26,37 @@
 ########################################################################
 
 # CONFIGURATION
-VERSION=0.9.0
+VERSION=0.9.1
 
 # Load configuration
 if ! . ./gpack.conf ; then
     echo "Failed to locate 'gpack.conf', aborting."
+    exit 1
+fi
+
+# ensure that all required config is set
+if [ -z "$PKG_CONF_DIR" ]; then
+    echo "PKG_CONF_DIR not set in gpack.conf"
+    exit 1
+fi
+
+if [ -z "$PKG_FILE_DIR" ]; then
+    echo "PKG_FILE_DIR not set in gpack.conf"
+    exit 1
+fi
+
+if [ -z "$PKG_ROOT_DIR" ]; then
+    echo "PKG_ROOT_DIR not set in gpack.conf"
+    exit 1
+fi
+
+if [ -z "$PKG_SOURCE_DIR" ]; then
+    echo "PKG_SOURCE_DIR not set in gpack.conf"
+    exit 1
+fi
+
+if [ -z "$PKG_PACKAGE_DIR" ]; then
+    echo "PKG_PACKAGE_DIR not set in gpack.conf"
     exit 1
 fi
 
@@ -98,8 +124,8 @@ warn() {
 # Name: verbose <message>
 # Desc: Print message on screen only when verbose is specified
 verbose() {
-    if [ ! "$VERBOSE" == "" ]; then
-	echo $1
+    if [ "$VERBOSE" == "yes" ]; then
+	echo "VERBOSE: $1"
     fi
 }
 
@@ -113,6 +139,12 @@ pkg_find() {
 	return 0
     fi
     return 1
+}
+
+# Name: pkg_find_bin <package name>
+# Desc: Find and return location for binary package
+pkg_find_bin() {
+    echo `find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"`
 }
 
 # Name: pkg_version <package directory>
@@ -168,6 +200,10 @@ pkg_meets() {
 	return 1
     fi
 
+    if [ -z "$1" ]; then
+	return 1
+    fi
+
     # package name
     local PKG_NAME=`echo $1 | awk '{print $1;}'`
     # operator
@@ -175,14 +211,15 @@ pkg_meets() {
     # version need
     local PKG_NEED=`echo $1 | awk '{print $3;}'`
 
-    # package path
-    local PKG_PATH=`pkg_find $PKG_NAME`
-    if [ "$PKG_PATH" == "" ]; then
-	error "Could not find package"
+    # look for package
+    if [ ! -d "$PKG_CONF_DIR/$PKG_NAME" ]; then
+	return 1
     fi
 
     # current version
-    local PKG_VERSION=`pkg_version $PKG_PATH`
+    local PKG_VERSION=`pkg_version $PKG_CONF_DIR/$PKG_NAME`
+
+    ########
 
     case $PKG_OPER in
 	">")
@@ -212,24 +249,27 @@ pkg_meets() {
 	    error "Bad operator"
 	    ;;
     esac
+
     return 1
 }
 
 # Name: pkg_build <package location>
 # Desc: Build package from package file.
 pkg_build() {
-    if ! . $1/$PKG_FILE ; then
+    local PKG_WORK_DIR="$1"
+
+    if ! . $PKG_WORK_DIR/$PKG_FILE ; then
 	error "Could not find $PKG_FILE"
     fi
 
     # make sure that the needed variables exist
-    if [ "$name" == "" ]; then
+    if [ -z "$name" ]; then
 	error "'name' not specified"
     fi
-    if [ "$version" == "" ]; then
+    if [ -z "$version" ]; then
 	error "'version' not specified"
     fi
-    if [ "$release" == "" ]; then
+    if [ -z "$release" ]; then
 	error "'release' not specified"
     fi
 
@@ -242,7 +282,7 @@ pkg_build() {
     # check dependancies
     for i in "${depends[@]}"; do
 	if ! pkg_meets $i; then
-	    error "Dependancies not met"
+	    error "Dependancies not met ($i)"
 	fi
     done
 
@@ -260,7 +300,7 @@ pkg_build() {
 
     # set up build environment
     # source/build directory
-    local WORK=$1/work
+    local WORK=$PKG_WORK_DIR/work
     local SRC=$WORK/src
     # package base directory
     local PKG_BASE=$WORK/pkg
@@ -330,11 +370,11 @@ pkg_build() {
 
     # check checksum of source files
     verbose "Checking MD5 sums"
-    if [ -e "$1/checksum" ]; then
-	echo "Checking source integrity..."
+    if [ -e "$PKG_WORK_DIR/checksum" ]; then
+	verbose "Checking source integrity..."
 	for i in "${source[@]}"; do
 	    local SRC_FILE=`echo $i | sed 's|.*/||'`
-	    local CHKSUM=`cat $1/checksum | grep $SRC_FILE | awk '{print $1;}'`
+	    local CHKSUM=`cat $PKG_WORK_DIR/checksum | grep $SRC_FILE | awk '{print $1;}'`
 	    local FILE_CHKSUM=`(cd $PKG_SOURCE_DIR; md5sum $SRC_FILE) | awk '{print $1;}'`
 	    if [ ! "$FILE_CHKSUM" == "$CHKSUM" ]; then
 		echo "MD5 Mismatch ($SRC_FILE)"
@@ -345,12 +385,12 @@ pkg_build() {
 	    fi
 	done
     else
-	echo "Generating checksum for source files..."
+	verbose "Generating checksum for source files..."
 	for i in "${source[@]}"; do
 	    local SRC_FILE=`echo $i | sed 's|.*/||'`
 	    local CHKSUM=`md5sum $PKG_SOURCE_DIR/$SRC_FILE`
 	    local MD5=`echo $CHKSUM | awk '{print $1;}'`
-	    echo "$MD5 $SRC_FILE" >> $1/checksum
+	    echo "$MD5 $SRC_FILE" >> $PKG_WORK_DIR/checksum
 	done
     fi
 
@@ -364,8 +404,8 @@ pkg_build() {
     # build package
     verbose 'Creating package'
 
-    verbose "$1/$PKG_FILE $PKG_BASE"
-    cp $1/$PKG_FILE $PKG_BASE
+    verbose "$PKG_WORK_DIR/$PKG_FILE $PKG_BASE"
+    cp $PKG_WORK_DIR/$PKG_FILE $PKG_BASE
 
     # create package footprint
     verbose "Creating footprint"
@@ -397,11 +437,15 @@ pkg_build() {
 # Name: pkg_install <package file>
 # Desc: Installs package.
 pkg_install() {
-    local TMP=/tmp/gpack-`date +%s`
+    local TMP=/tmp/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`
+    if [ -d "$TMP" ]; then
+	error "$TMP Package already exists -- either the package is being installed or an error has occurred. If there is an error, remove this directory"
+    fi
     mkdir $TMP
 
-    if ! tar xzf $1 -C $TMP ; then
-	error "Could not extract package"
+    # extract package desc
+    if ! tar xvf $1 -C $TMP $PKG_FILE > /dev/null ; then
+	error "Coult not extract package"
     fi
 
     (
@@ -411,16 +455,16 @@ pkg_install() {
 	fi
 
 	if pkg_installed $name ; then
-	    echo "ERROR: Package already installed ($name)"
+	    warn "Package already installed ($name)"
 	    if [ ! "$FORCE_OVERWRITE" == "yes" ]; then
-		return 1
+		return 0
 	    fi
 	fi
 
         # check dependancies
 	for i in "${depends[@]}"; do
 	    if ! pkg_meets $i; then
-		error "Dependancies not met"
+		error "Dependancies not met ($i)"
 	    fi
 	done
 	
@@ -437,6 +481,11 @@ pkg_install() {
 	    fi
 	done
 
+	# extract rest of archive
+	if ! tar xvf $1 -C $TMP > /dev/null ; then
+	    error "Coult not extract package"
+	fi
+
 	# run pre-install
 	pre_install
 
@@ -451,6 +500,7 @@ pkg_install() {
 	    fi
 	done
 
+	# overwrite files?
 	if [ "$INSTOK" == "1" ]; then
 	    if [ ! "$FORCE_OVERWRITE" = "yes" ]; then
 		error "Aborted install"
@@ -458,10 +508,10 @@ pkg_install() {
 	fi
 
 	# install the files
-	#cp -r $TMP/pkg/* $PKG_ROOT_DIR
 	for i in `cat footprint | awk '{print $5;}'`; do
 	    if [ -d "$TMP/pkg/$i" ]; then
-		if [ ! -d "$PKG_ROOT_DIR/pkg/$i" ]; then
+	        # handly directories appropriately
+		if [ ! -d "$PKG_ROOT_DIR/$i" ]; then
 		    mkdir -p $PKG_ROOT_DIR/$i
 		fi
 	    else
@@ -469,7 +519,7 @@ pkg_install() {
 	    fi
 	done
 
-	#
+	# create config entry
 	mkdir $PKG_CONF_DIR/$name
 
 	mv $PKG_FILE $PKG_CONF_DIR/$name/
@@ -477,7 +527,7 @@ pkg_install() {
 
 	# run post install
 	post_install
-    ) || exit 1
+    ) || (rm -rf $TMP && exit 1) || exit 1
 
     rm -rf $TMP
 
@@ -503,14 +553,15 @@ pkg_remove() {
 	    if [ -d "$PKG_ROOT_DIR/$i" ]; then
 		rmdir $PKG_ROOT_DIR/$i > /dev/null 2>&1
 	    else
-		rm $PKG_ROOT_DIR/$i > /dev/null 2>&1
+		verbose "Removing $i"
+		rm -f $PKG_ROOT_DIR/$i > /dev/null 2>&1
 	    fi
 	done
 	
 	post_remove
 	
         # remove installation info
-	rm -r $PKG_CONF_DIR/$1
+	rm -rf $PKG_CONF_DIR/$1
     ) || exit 1
     echo "Removed $1"
 }
@@ -527,6 +578,9 @@ pkg_installed() {
 # Name: pkg_depinst <package dir>
 # Desc: Install package & all dependancies
 pkg_depinst() {
+    # avoid trying to install zero-length strings...
+    [ -z "$1" ] && return 0
+
     (
 	# clean up package environment (needed)
 	name=''
@@ -537,14 +591,23 @@ pkg_depinst() {
 	optdeps=()
 	conflicts=()
 
-	if ! . $1/$PKG_FILE ; then
+	local TMP=/tmp/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`-dep
+	if [ -d "$TMP" ]; then
+	    warn "$TMP already exists"
+	    return 0
+	fi
+	mkdir $TMP
+
+	tar xzvf $1 -C $TMP $PKG_FILE > /dev/null
+
+	if ! . $TMP/$PKG_FILE ; then
 	    error "Could not find package config"
 	fi
 	
         # check dependancies
 	for i in "${depends[@]}"; do
 	    if ! pkg_meets $i; then
-		if ! (depends=(); conflicts=(); optdeps=(); pkg_depinst `pkg_find $i`); then
+		if ! pkg_depinst `pkg_find_bin $i`; then
 		    error "Installing dependancies"
 		fi
 	    fi
@@ -562,13 +625,15 @@ pkg_depinst() {
 	    fi
 	done
 	
-	echo "-- $1"
-	local PKG_NAME="$1/$name-$version-$release.$PKG_EXTENSION"
+	local PKG_NAME="$PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION"
 	if [ ! -e "$PKG_NAME" ]; then
 	    if ! pkg_build $1 ; then
 		error "Build failed"
 	    fi
 	fi
-	pkg_install "$1/$name-$version-$release.$PKG_EXTENSION"
+	pkg_install "$PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION"
+
+	rm -rf $TMP
     ) || exit 1
+    return 0
 }
