@@ -15,10 +15,17 @@ SETTING UP GPACK:
     You need to make sure that your gpack.conf file is modified for your
     system.
 
-    PKG_FILE_DIR - The directory containing the package and descriptors.
-    PKG_CONF_DIR - The directory containing the installed package info.
-    PKG_ROOT_DIR - The root installation directory for GPack install.
-    PKG_LOG      - Log file for GPack builds (and other operations).
+    PKG_FILE_DIR    - The directory containing the package and descriptors.
+    PKG_CONF_DIR    - The directory containing the installed package info.
+    PKG_ROOT_DIR    - The root installation directory for GPack install.
+    PKG_LOG         - Log file for GPack builds (and other operations).
+    PKG_PACKAGE_DIR - The directory which will contain all build pacakges.
+    PKG_SOURCE_DIR  - The directory which will contain all downloaded source.
+
+SPECIAL VARIABLES:
+   FORCE_OVERWRITE  - Force package to overwrite files which already exist on
+		      the system.
+   FORCE_NO_DEPS    - Ignore dependancies.
 
 BASIC USAGE:
     To build a package, simply run the following:

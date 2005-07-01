@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.13 2005/07/01 02:50:24 nymacro Exp $
+# $Id: gpack.sh,v 1.14 2005/07/01 03:09:43 nymacro Exp $
 
 ########################################################################
 #
@@ -456,15 +456,19 @@ pkg_install() {
 
 	if pkg_installed $name ; then
 	    warn "Package already installed ($name)"
-	    if [ ! "$FORCE_OVERWRITE" == "yes" ]; then
+	    #if [ ! "$FORCE_OVERWRITE" == "yes" ]; then
 		return 0
-	    fi
+	    #fi
 	fi
 
         # check dependancies
 	for i in "${depends[@]}"; do
 	    if ! pkg_meets $i; then
-		error "Dependancies not met ($i)"
+		if [ ! "$FORCE_NO_DEPS" == "yes" ]; then
+		    error "Dependancies not met ($i)"
+		else
+		    warn "Dependancy not met ($i). Ignoring."
+		fi
 	    fi
 	done
 	
