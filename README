@@ -27,6 +27,20 @@ SPECIAL VARIABLES:
 		      the system.
    FORCE_NO_DEPS    - Ignore dependancies.
 
+
+PACKAGE DESCRIPTOR REPOSITRY LAYOUT:
+    The package descriptor repositry (PKG_FILE_DIR) layout is quite simple.
+    In its most simple form, PKG_FILE_DIR will be populated with the actual
+    descriptors (in form name-version-release.SATPKG). But GPack does not
+    limit the possibility that you may wish to categorize packages, and
+    therefore GPack takes nested folders into consideration (no extra
+    configuration is needed to use this feature).
+
+
+    For an example of the layout, see Sat GNU/Linux's online package
+    repositry. *PUT A LINK HERE*
+
+
 BASIC USAGE:
     To build a package, simply run the following:
         ./gpack build packagename
@@ -36,6 +50,9 @@ BASIC USAGE:
 
     To remove a package:
         ./gpack remove packagename
+
+    To get help about GPack commands:
+	./gpack help
 
 TOOLS REQUIRED TO RUN GPACK:
     bash

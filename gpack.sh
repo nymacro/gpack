@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.14 2005/07/01 03:09:43 nymacro Exp $
+# $Id: gpack.sh,v 1.15 2005/07/02 01:14:39 nymacro Exp $
 
 ########################################################################
 #
@@ -130,15 +130,9 @@ verbose() {
 }
 
 # Name: pkg_find <package name>
-# Desc: Find and return package location
+# Desc: Find and return package descriptor location
 pkg_find() {
-    local found=`find $PKG_FILE_DIR -maxdepth 2 -name "$1" -type d -not -name work`
-    if [ -d "$found" ]; then
-	# return success!
-	echo "$found"
-	return 0
-    fi
-    return 1
+    echo `find $PKG_FILE_DIR -name "$1*.$PKG_FILE"`
 }
 
 # Name: pkg_find_bin <package name>
@@ -161,7 +155,7 @@ pkg_version() {
 # Name: pkg_info <package dir>
 # Desc: Prints package information to screen
 pkg_info() {
-    if ! . $1/$PKG_FILE ; then
+    if ! . $1 ; then
 	error "Failed to find package file."
     fi
 
@@ -256,9 +250,9 @@ pkg_meets() {
 # Name: pkg_build <package location>
 # Desc: Build package from package file.
 pkg_build() {
-    local PKG_WORK_DIR="$1"
+    local PKG_FILE_NAME="$1"
 
-    if ! . $PKG_WORK_DIR/$PKG_FILE ; then
+    if ! . $PKG_FILE_NAME ; then
 	error "Could not find $PKG_FILE"
     fi
 
@@ -294,13 +288,13 @@ pkg_build() {
 
     for i in "${conflicts[@]}"; do
 	if pkg_meets $i; then
-	    error "Conflicting packages ($i)"
+	    warn "Conflicting packages ($i)"
 	fi
     done
 
     # set up build environment
     # source/build directory
-    local WORK=$PKG_WORK_DIR/work
+    local WORK=/tmp/gpack-`echo $PKG_FILE_NAME | sed -e 's|/.*/||'`-build
     local SRC=$WORK/src
     # package base directory
     local PKG_BASE=$WORK/pkg
@@ -308,6 +302,7 @@ pkg_build() {
     local PKG=$PKG_BASE/pkg
 
     if [ -d "$WORK" ]; then
+	warn "$WORK already exists. Removing"
 	rm -rf $WORK
     fi
 
@@ -337,7 +332,7 @@ pkg_build() {
 		gz)
 		    if (echo $SRC_FILE | grep 'tar'); then
 			verbose "Extracting tar.gz"
-			tar xzf $SRC_FILE -C $SRC
+			tar -xzf $SRC_FILE -C $SRC
 		    else
 			verbose "Extracting gz"
 			(cp $SRC_FILE $SRC && cd $SRC && gunzip $SRC_FILE)
@@ -345,12 +340,12 @@ pkg_build() {
 		    ;;
 		tgz)
 		    verbose "Extracting tgz"
-		    tar xzf $SRC_FILE -C $SRC
+		    tar -xzf $SRC_FILE -C $SRC
 		    ;;
 		bz2)
 		    if (echo $SRC_FILE | grep 'tar'); then
 			verbose "Extracting tar.bz2"
-			tar xjf $SRC_FILE -C $SRC
+			tar -xjf $SRC_FILE -C $SRC
 		    else
 			verbose "Extracting bz2"
 			(cp $SRC_FILE $SRC && cd $SRC && bunzip2 $SRC_FILE)
@@ -370,11 +365,12 @@ pkg_build() {
 
     # check checksum of source files
     verbose "Checking MD5 sums"
-    if [ -e "$PKG_WORK_DIR/checksum" ]; then
+    local PKG_CHECKSUM=`echo $PKG_FILE_NAME | sed -e "s|$PKG_FILE|checksum|"`
+    if [ -e "$PKG_CHECKSUM" ]; then
 	verbose "Checking source integrity..."
 	for i in "${source[@]}"; do
 	    local SRC_FILE=`echo $i | sed 's|.*/||'`
-	    local CHKSUM=`cat $PKG_WORK_DIR/checksum | grep $SRC_FILE | awk '{print $1;}'`
+	    local CHKSUM=`cat $PKG_CHECKSUM | grep $SRC_FILE | awk '{print $1;}'`
 	    local FILE_CHKSUM=`(cd $PKG_SOURCE_DIR; md5sum $SRC_FILE) | awk '{print $1;}'`
 	    if [ ! "$FILE_CHKSUM" == "$CHKSUM" ]; then
 		echo "MD5 Mismatch ($SRC_FILE)"
@@ -390,7 +386,7 @@ pkg_build() {
 	    local SRC_FILE=`echo $i | sed 's|.*/||'`
 	    local CHKSUM=`md5sum $PKG_SOURCE_DIR/$SRC_FILE`
 	    local MD5=`echo $CHKSUM | awk '{print $1;}'`
-	    echo "$MD5 $SRC_FILE" >> $PKG_WORK_DIR/checksum
+	    echo "$MD5 $SRC_FILE" >> $PKG_CHECKSUM
 	done
     fi
 
@@ -404,8 +400,8 @@ pkg_build() {
     # build package
     verbose 'Creating package'
 
-    verbose "$PKG_WORK_DIR/$PKG_FILE $PKG_BASE"
-    cp $PKG_WORK_DIR/$PKG_FILE $PKG_BASE
+    verbose "$PKG_FILE_NAME $PKG_BASE"
+    cp $PKG_FILE_NAME $PKG_BASE/$PKG_FILE
 
     # create package footprint
     verbose "Creating footprint"
@@ -419,7 +415,7 @@ pkg_build() {
 
     # archive
     verbose "Creating package archive"
-    if (cd $PKG_BASE && tar czf $PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION *) ; then
+    if (cd $PKG_BASE && tar -czf $PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION *) ; then
 	echo "Package created"
     else
 	error "Failed to create package"
@@ -444,7 +440,7 @@ pkg_install() {
     mkdir $TMP
 
     # extract package desc
-    if ! tar xvf $1 -C $TMP $PKG_FILE > /dev/null ; then
+    if ! tar -xzf $1 -C $TMP $PKG_FILE ; then
 	error "Coult not extract package"
     fi
 
@@ -486,7 +482,7 @@ pkg_install() {
 	done
 
 	# extract rest of archive
-	if ! tar xvf $1 -C $TMP > /dev/null ; then
+	if ! tar -xzf $1 -C $TMP ; then
 	    error "Coult not extract package"
 	fi
 
@@ -602,7 +598,7 @@ pkg_depinst() {
 	fi
 	mkdir $TMP
 
-	tar xzvf $1 -C $TMP $PKG_FILE > /dev/null
+	tar -xzf $1 -C $TMP $PKG_FILE
 
 	if ! . $TMP/$PKG_FILE ; then
 	    error "Could not find package config"
