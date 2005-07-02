@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.15 2005/07/02 01:14:39 nymacro Exp $
+# $Id: gpack.sh,v 1.16 2005/07/02 10:45:34 nymacro Exp $
 
 ########################################################################
 #
@@ -276,7 +276,11 @@ pkg_build() {
     # check dependancies
     for i in "${depends[@]}"; do
 	if ! pkg_meets $i; then
-	    error "Dependancies not met ($i)"
+	    if [ ! "$FORCE_NO_DEPS" == "yes" ]; then
+		error "Dependancies not met ($i)"
+	    else
+		warn "Dependancies not met ($i). Ignoring."
+	    fi
 	fi
     done
 
@@ -300,6 +304,10 @@ pkg_build() {
     local PKG_BASE=$WORK/pkg
     # package installation directory
     local PKG=$PKG_BASE/pkg
+
+    # Trap
+    trap "rm -rf $WORK && exit 'Interrupted build'" TERM HUP INT
+
 
     if [ -d "$WORK" ]; then
 	warn "$WORK already exists. Removing"
@@ -445,6 +453,9 @@ pkg_install() {
     fi
 
     (
+        # trap signals
+	trap "warn 'Cannot exit at this time.'" TERM HUP INT
+
 	cd $TMP
 	if ! . ./$PKG_FILE ; then
 	    error "Invalid package format"
@@ -545,6 +556,9 @@ pkg_remove() {
 	if ! . $PKG_CONF_DIR/$1/$PKG_FILE ; then
 	    error "Could not find package file"
 	fi
+
+	# trap
+	trap "warn 'Cannot exit at this time.'" TERM HUP INT
 	
 	pre_remove
 	
