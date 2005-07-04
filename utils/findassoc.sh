@@ -18,7 +18,5 @@ for i in `ls $PKG_CONF_DIR`; do
     fi
 done
 
-echo "No packages on system contain that file"
-
-exit 1
+exit 0
 

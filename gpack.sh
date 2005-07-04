@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.19 2005/07/04 02:30:00 nymacro Exp $
+# $Id: gpack.sh,v 1.20 2005/07/04 06:38:52 nymacro Exp $
 
 ########################################################################
 #
@@ -439,6 +439,12 @@ pkg_build() {
     # create package format info
     echo "GPack $VERSION " `date` > $PKG_BASE/info
 
+    # strip debug symbols if required
+    if [ "$FORCE_STRIP_DEBUG" == "yes" ]; then
+	warn "Stripping debug symbols"
+	find $PKG -type f -exec strip --strip-debug '{}' ';'
+    fi
+
     # archive
     verbose "Creating package archive"
     if (cd $PKG_BASE && tar -czf $PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION *) ; then
@@ -536,6 +542,12 @@ pkg_install() {
 		    error "Aborted install"
 		fi
 	    fi
+	fi
+
+	# strip debugging symbols is required
+	if [ "$FORCE_STRIP_DEBUG" == "yes" ]; then
+	    warn "Stripping debug symbols"
+	    find $TMP -type f -exec strip --strip-debug '{}' ';'
 	fi
 
 	# install the files

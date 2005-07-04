@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Interface
-# $Id: gpack,v 1.10 2005/07/04 00:34:46 nymacro Exp $
+# $Id: gpack,v 1.11 2005/07/04 06:38:52 nymacro Exp $
 
 ########################################################################
 #
@@ -47,6 +47,11 @@ for (( i=0 ; $i < $# ; i=$i+1 )) ; do
 	--keep|-k)
 	    warn "Keep existing files on system enabled"
 	    FORCE_KEEP=yes
+	    unset ARGS[$i]
+	    ;;
+	--strip|-s)
+	    warn "Stripping debug symbol information enabled"
+	    FORCE_STRIP_DEBUG=yes
 	    unset ARGS[$i]
 	    ;;
 	*)
@@ -128,5 +133,6 @@ case "$COMMAND" in
 	echo "        -o --overwrite    Overwrite existing files in installation"
 	echo "        -k --keep         Keep existing files on system"
 	echo "        -n --no-deps      Disable dependancy checking"
+	echo "        -s --strip        Strip debugging information from package"
 	;;
 esac
