@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.18 2005/07/04 01:05:13 nymacro Exp $
+# $Id: gpack.sh,v 1.19 2005/07/04 02:30:00 nymacro Exp $
 
 ########################################################################
 #
@@ -135,11 +135,11 @@ pkg_find() {
     #echo `find $PKG_FILE_DIR -name "$1*.$PKG_FILE"`
     local -a TMP=($(find $PKG_FILE_DIR -name "$1*.$PKG_FILE"))
     if [[ ${#TMP[@]} > 1 ]]; then
-	echo "Possible packages:" 1>&1
+	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
-	    echo "$i" 1>&1
+	    echo "$i" 1>&2
 	done
-	echo "Using:" 2>&1
+	echo "Using:" 1>&2
     fi
     echo "${TMP[0]}"
 }
@@ -150,11 +150,11 @@ pkg_find_bin() {
     #echo `find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"`
     local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"))
     if [[ ${#TMP[@]} > 1 ]]; then
-	echo "Possible packages:" 1>&1
+	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
-	    echo "$i" 1>&1
+	    echo "$i" 1>&2
 	done
-	echo "Using:" 2>&1
+	echo "Using:" 1>&2
     fi
     echo "${TMP[0]}"
 }
