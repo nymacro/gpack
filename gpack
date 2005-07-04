@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Interface
-# $Id: gpack,v 1.9 2005/07/02 01:14:39 nymacro Exp $
+# $Id: gpack,v 1.10 2005/07/04 00:34:46 nymacro Exp $
 
 ########################################################################
 #
@@ -31,9 +31,34 @@ if ! . ./gpack.sh ; then
 fi
 
 ARGS=(`echo $@`)
-unset ARGS[0]
 
-case $1 in
+for (( i=0 ; $i < $# ; i=$i+1 )) ; do
+    case "${ARGS[$i]}" in
+	--no-deps|-n)
+	    warn "Disabling dependancy checking"
+	    FORCE_NO_DEPS=yes
+	    unset ARGS[$i]
+	    ;;
+	--overwrite|-o)
+	    warn "Force overwrite enabled"
+	    FORCE_OVERWRITE=yes
+	    unset ARGS[$i]
+	    ;;
+	--keep|-k)
+	    warn "Keep existing files on system enabled"
+	    FORCE_KEEP=yes
+	    unset ARGS[$i]
+	    ;;
+	*)
+	    if [ -z "$COMMAND" ]; then
+		COMMAND=${ARGS[$i]}
+		unset ARGS[$i]
+	    fi
+	    ;;
+    esac
+done
+
+case "$COMMAND" in
     "build")
 	for i in "${ARGS[@]}"; do
 	    pkg_build `pkg_find $i`
@@ -88,15 +113,20 @@ case $1 in
 	echo "GPack $VERSION - Aaron Marks 2005 - See COPYING for license details"
 	echo "usage:  $0 <command> [<argument>*]"
 	echo "    commands:"
-	echo "        build     build package"
-	echo "        install   install package"
-	echo "        remove    remove package"
-	echo "        depinst   install package and all dependancies"
-	echo "        info      print package information"
-	echo "        list      list available packages"
-	echo "        installed list installed packages"
-	echo "        find      find package"
-	echo "        rebuild   build a package from scratch"
-	echo "        clean     clean up a package"
+	echo "        build             build package"
+	echo "        install           install package"
+	echo "        remove            remove package"
+	echo "        depinst           install package and all dependancies"
+	echo "        info              print package information"
+	echo "        list              list available packages"
+	echo "        installed         list installed packages"
+	echo "        find              find package"
+	echo "        rebuild           build a package from scratch"
+	echo "        clean             clean up a package"
+	echo
+	echo "    options:"
+	echo "        -o --overwrite    Overwrite existing files in installation"
+	echo "        -k --keep         Keep existing files on system"
+	echo "        -n --no-deps      Disable dependancy checking"
 	;;
 esac

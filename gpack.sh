@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.16 2005/07/02 10:45:34 nymacro Exp $
+# $Id: gpack.sh,v 1.17 2005/07/04 00:34:46 nymacro Exp $
 
 ########################################################################
 #
@@ -132,13 +132,31 @@ verbose() {
 # Name: pkg_find <package name>
 # Desc: Find and return package descriptor location
 pkg_find() {
-    echo `find $PKG_FILE_DIR -name "$1*.$PKG_FILE"`
+    #echo `find $PKG_FILE_DIR -name "$1*.$PKG_FILE"`
+    local -a TMP=($(find $PKG_FILE_DIR -name "$1*.$PKG_FILE"))
+    if [[ ${#TMP[@]} > 1 ]]; then
+	echo "Possible packages:" 1>&1
+	for i in "${TMP[@]}"; do
+	    echo "$i" 1>&1
+	done
+	echo "Using:" 2>&1
+    fi
+    echo "${TMP[0]}"
 }
 
 # Name: pkg_find_bin <package name>
 # Desc: Find and return location for binary package
 pkg_find_bin() {
-    echo `find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"`
+    #echo `find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"`
+    local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"))
+    if [[ ${#TMP[@]} > 1 ]]; then
+	echo "Possible packages:" 1>&1
+	for i in "${TMP[@]}"; do
+	    echo "$i" 1>&1
+	done
+	echo "Using:" 2>&1
+    fi
+    echo "${TMP[0]}"
 }
 
 # Name: pkg_version <package directory>
@@ -526,7 +544,12 @@ pkg_install() {
 		    mkdir -p $PKG_ROOT_DIR/$i
 		fi
 	    else
-		mv $TMP/pkg/$i $PKG_ROOT_DIR/$i
+		# TODO: keep may not always work
+		if [ "$FORCE_KEEP" == "yes" ]; then
+		    mv -u $TMP/pkg/$i $PKG_ROOT_DIR/$i
+		else
+		    mv $TMP/pkg/$i $PKG_ROOT_DIR/$i
+		fi
 	    fi
 	done
 
@@ -604,6 +627,7 @@ pkg_depinst() {
 	depends=()
 	optdeps=()
 	conflicts=()
+	source=()
 
 	local TMP=/tmp/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`-dep
 	if [ -d "$TMP" ]; then
