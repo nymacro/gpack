@@ -10,11 +10,11 @@ fi
 . ../gpack.conf
 
 for i in `ls $PKG_CONF_DIR`; do
-    echo $i
+#    echo $i
     TMP=`cat $PKG_CONF_DIR/$i/footprint | grep "/$1$"`
     if [ ! "$TMP" == "" ]; then
         echo "FOUND: '$1' in package $i"
-        exit 0
+#        exit 0
     fi
 done
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.17 2005/07/04 00:34:46 nymacro Exp $
+# $Id: gpack.sh,v 1.18 2005/07/04 01:05:13 nymacro Exp $
 
 ########################################################################
 #
@@ -531,8 +531,10 @@ pkg_install() {
 
 	# overwrite files?
 	if [ "$INSTOK" == "1" ]; then
-	    if [ ! "$FORCE_OVERWRITE" = "yes" ]; then
-		error "Aborted install"
+	    if [ ! "$FORCE_OVERWRITE" == "yes" ] ; then
+		if [ ! "$FORCE_KEEP" == "yes" ]; then
+		    error "Aborted install"
+		fi
 	    fi
 	fi
 
