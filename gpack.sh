@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.20 2005/07/04 06:38:52 nymacro Exp $
+# $Id: gpack.sh,v 1.21 2005/07/05 00:05:01 nymacro Exp $
 
 ########################################################################
 #
@@ -133,7 +133,7 @@ verbose() {
 # Desc: Find and return package descriptor location
 pkg_find() {
     #echo `find $PKG_FILE_DIR -name "$1*.$PKG_FILE"`
-    local -a TMP=($(find $PKG_FILE_DIR -name "$1*.$PKG_FILE"))
+    local -a TMP=($(find $PKG_FILE_DIR -name "$1-*.$PKG_FILE"))
     if [[ ${#TMP[@]} > 1 ]]; then
 	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
@@ -148,7 +148,7 @@ pkg_find() {
 # Desc: Find and return location for binary package
 pkg_find_bin() {
     #echo `find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"`
-    local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"))
+    local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1-*.$PKG_EXTENSION"))
     if [[ ${#TMP[@]} > 1 ]]; then
 	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
@@ -354,9 +354,10 @@ pkg_build() {
 	# copy/extract files
 	(
 	    cd $PKG_SOURCE_DIR &&
+	    local EXT2=`echo $SRC_FILE | sed -e 's|.*\.\(.*\)\..*|\1|'`
 	    case `echo $SRC_FILE | sed -e 's/.*\.//'` in
 		gz)
-		    if (echo $SRC_FILE | grep 'tar'); then
+		    if [ "$EXT2" == "tar" ]; then
 			verbose "Extracting tar.gz"
 			tar -xzf $SRC_FILE -C $SRC
 		    else
@@ -369,7 +370,7 @@ pkg_build() {
 		    tar -xzf $SRC_FILE -C $SRC
 		    ;;
 		bz2)
-		    if (echo $SRC_FILE | grep 'tar'); then
+		    if [ "$EXT2" == "tar" ]; then
 			verbose "Extracting tar.bz2"
 			tar -xjf $SRC_FILE -C $SRC
 		    else
@@ -688,4 +689,36 @@ pkg_depinst() {
 	rm -rf $TMP
     ) || exit 1
     return 0
+}
+
+# Name: pkg_depends <package name>
+# Desc: Print a dependancy tree for a package
+pkg_depends() {
+    local LOCATION=`pkg_find $1`
+    local INDENT=""
+    [ -z "$LOCATION" ] && error "Package $1 not found"
+    if [ -z "$2" ]; then
+	INDENT=""
+    else
+	INDENT="$2"
+    fi
+
+    (
+	# clean up environment
+	name=''
+	version=''
+	group=''
+	license=''
+	depends=()
+	optdeps=()
+	conflicts=()
+	source=()
+
+	. $LOCATION
+
+	echo "$INDENT$name"
+	for i in "${depends[@]}"; do
+	    pkg_depends "$i" "$2--"
+	done
+    )
 }
