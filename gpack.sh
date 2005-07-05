@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.21 2005/07/05 00:05:01 nymacro Exp $
+# $Id: gpack.sh,v 1.22 2005/07/05 09:05:49 nymacro Exp $
 
 ########################################################################
 #
@@ -419,7 +419,8 @@ pkg_build() {
 
     # build
     verbose "Build"
-    if ! (cd $SRC && build) ; then
+    # -e errexit -x xtrace
+    if ! (cd $SRC && set -e -x && build) ; then
 	rm -rf $WORK
 	error "'build' failed"
     fi
