@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.25 2005/07/07 11:56:52 maci Exp $
+# $Id: gpack.sh,v 1.26 2005/07/07 12:34:51 nymacro Exp $
 
 ########################################################################
 #
@@ -26,7 +26,7 @@
 ########################################################################
 
 # CONFIGURATION
-VERSION=0.9.1
+VERSION=0.9.2
 
 # -e errexit -x xtrace
 set -e
@@ -136,6 +136,7 @@ verbose() {
 # Desc: Find and return package descriptor location
 pkg_find() {
     local -a TMP=($(find $PKG_FILE_DIR -name "$1-*.$PKG_FILE" \
+	-or -regex ".*/$1\(.*\)?/$PKG_FILE" \
 	-not -regex '.*/{arch}/.*' \
 	-not -regex '.*/CVS/.*' | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
@@ -349,11 +350,21 @@ pkg_build() {
     verbose 'Getting source'
     for i in "${source[@]}"; do
 	local SRC_FILE=`echo $i | sed 's|.*/||'`
+	local SRC_DIR=`echo $PKG_FILE_NAME | sed -e 's|\(.*\)/.*$|\1|'`
+	echo "-- $SRC_DIR"
 	verbose "Checking for $SRC_FILE"
-	if [ ! -e "$PKG_SOURCE_DIR/$SRC_FILE" ]; then
-	    if ! (cd $PKG_SOURCE_DIR && wget $i); then
-		error "Failed to retrieve source."
+	# check in SATPKG dir for file
+	if [ ! -e "$SRC_DIR/$SRC_FILE" ]; then
+	    # check in shared source dir for file
+	    if [ ! -e "$PKG_SOURCE_DIR/$SRC_FILE" ]; then
+		if ! (cd $PKG_SOURCE_DIR && wget $i); then
+		    error "Failed to retrieve source."
+		fi
 	    fi
+	else
+	    # this file is probably config & can be copied quickly
+	    cp "$SRC_DIR/$SRC_FILE" "$SRC"
+	    continue
 	fi
 
 	# copy/extract files
