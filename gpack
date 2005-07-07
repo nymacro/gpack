@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Interface
-# $Id: gpack,v 1.13 2005/07/07 05:59:48 nymacro Exp $
+# $Id: gpack,v 1.14 2005/07/07 07:10:06 nymacro Exp $
 
 ########################################################################
 #
@@ -91,7 +91,14 @@ case "$COMMAND" in
     depinst)
 	for i in "${ARGS[@]}"; do
 	    TMP=`pkg_find_bin $i`
-	    [ -z "$TMP" ] && error "No package ($i) found"
+	    if [ -z "$TMP" ]; then
+		# build package
+		TMP2=`pkg_find $i`
+		[ -z "$TMP2" ] && error "No package ($i) found"
+		if ! pkg_build "$TMP2" ; then
+		    error "($i) Build failed"
+		fi
+	    fi
 	    pkg_depinst "$TMP"
 	done
 	;;

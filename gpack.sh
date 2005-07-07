@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.23 2005/07/07 05:59:48 nymacro Exp $
+# $Id: gpack.sh,v 1.24 2005/07/07 07:10:06 nymacro Exp $
 
 ########################################################################
 #
@@ -135,8 +135,9 @@ verbose() {
 # Name: pkg_find <package name>
 # Desc: Find and return package descriptor location
 pkg_find() {
-    #echo `find $PKG_FILE_DIR -name "$1*.$PKG_FILE"`
-    local -a TMP=($(find $PKG_FILE_DIR -name "$1-*.$PKG_FILE" | sort -r))
+    local -a TMP=($(find $PKG_FILE_DIR -name "$1-*.$PKG_FILE" \
+	-not -regex '.*/{arch}/.*' \
+	-not -regex '.*/CVS/.*' | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
 	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
@@ -150,8 +151,9 @@ pkg_find() {
 # Name: pkg_find_bin <package name>
 # Desc: Find and return location for binary package
 pkg_find_bin() {
-    #echo `find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"`
-    local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1-*.$PKG_EXTENSION" | sort -r))
+    local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1-*.$PKG_EXTENSION" \
+	-not -regex '.*/{arch}/.*' \
+	-not -regex '.*/CVS/.*' | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
 	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
