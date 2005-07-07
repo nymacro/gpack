@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.22 2005/07/05 09:05:49 nymacro Exp $
+# $Id: gpack.sh,v 1.23 2005/07/07 05:59:48 nymacro Exp $
 
 ########################################################################
 #
@@ -27,6 +27,9 @@
 
 # CONFIGURATION
 VERSION=0.9.1
+
+# -e errexit -x xtrace
+set -e
 
 # Load configuration
 if ! . ./gpack.conf ; then
@@ -133,7 +136,7 @@ verbose() {
 # Desc: Find and return package descriptor location
 pkg_find() {
     #echo `find $PKG_FILE_DIR -name "$1*.$PKG_FILE"`
-    local -a TMP=($(find $PKG_FILE_DIR -name "$1-*.$PKG_FILE"))
+    local -a TMP=($(find $PKG_FILE_DIR -name "$1-*.$PKG_FILE" | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
 	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
@@ -148,7 +151,7 @@ pkg_find() {
 # Desc: Find and return location for binary package
 pkg_find_bin() {
     #echo `find $PKG_PACKAGE_DIR -name "$1*.$PKG_EXTENSION"`
-    local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1-*.$PKG_EXTENSION"))
+    local -a TMP=($(find $PKG_PACKAGE_DIR -name "$1-*.$PKG_EXTENSION" | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
 	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
@@ -304,7 +307,7 @@ pkg_build() {
 
     for i in "${optdeps[@]}"; do
 	if ! pkg_meets $i; then
-	    warn "Optional dependancy not installed."
+	    warn "Optional dependancy not installed ($i)."
 	fi
     done
 
@@ -419,8 +422,7 @@ pkg_build() {
 
     # build
     verbose "Build"
-    # -e errexit -x xtrace
-    if ! (cd $SRC && set -e -x && build) ; then
+    if ! (cd $SRC && set -x && build) ; then
 	rm -rf $WORK
 	error "'build' failed"
     fi
@@ -507,7 +509,7 @@ pkg_install() {
 	
 	for i in "${optdeps[@]}"; do
 	    if ! pkg_meets $i; then
-		warn "Optional dependancy not installed."
+		warn "Optional dependancy not installed ($i)."
 	    fi
 	done
 
@@ -669,7 +671,7 @@ pkg_depinst() {
 	
 	for i in "${optdeps[@]}"; do
 	    if ! pkg_meets $i; then
-		warn "Optional dependancy not installed."
+		warn "Optional dependancy not installed ($i)."
 	    fi
 	done
 
