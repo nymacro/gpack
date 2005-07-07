@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.27 2005/07/07 12:50:00 nymacro Exp $
+# $Id: gpack.sh,v 1.28 2005/07/07 23:23:26 nymacro Exp $
 
 ########################################################################
 #
@@ -324,7 +324,7 @@ pkg_build() {
 
     # set up build environment
     # source/build directory
-    local WORK=/tmp/gpack-`echo $PKG_FILE_NAME | sed -e 's|/.*/||'`-build
+    local WORK=$PKG_TEMP_DIR/gpack-`echo $PKG_FILE_NAME | sed -e 's|/.*/||'`-build
     local SRC=$WORK/src
     # package base directory
     local PKG_BASE=$WORK/pkg
@@ -353,7 +353,6 @@ pkg_build() {
     for i in "${source[@]}"; do
 	local SRC_FILE=`echo $i | sed 's|.*/||'`
 	local SRC_DIR=`echo $PKG_FILE_NAME | sed -e 's|\(.*\)/.*$|\1|'`
-	echo "-- $SRC_DIR"
 	verbose "Checking for $SRC_FILE"
 	# check in SATPKG dir for file
 	if [ ! -e "$SRC_DIR/$SRC_FILE" ]; then
@@ -484,7 +483,7 @@ pkg_build() {
 # Name: pkg_install <package file>
 # Desc: Installs package.
 pkg_install() {
-    local TMP=/tmp/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`
+    local TMP=$PKG_TEMP_DIR/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`
     if [ -d "$TMP" ]; then
 	error "$TMP Package already exists -- either the package is being installed or an error has occurred. If there is an error, remove this directory"
     fi
@@ -662,7 +661,7 @@ pkg_depinst() {
 	conflicts=()
 	source=()
 
-	local TMP=/tmp/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`-dep
+	local TMP=$PKG_TEMP_DIR/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`-dep
 	if [ -d "$TMP" ]; then
 	    warn "$TMP already exists"
 	    return 0
