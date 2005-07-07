@@ -116,8 +116,7 @@ STANDARD PACKAGE NAMING CONVENTION:
 EXAMPLES:
     For example of (non-functional) SATPKG file, see SATPKG.template
 
-    *More working examples will be provided here, especially the SATPKG files
-    used by SatGNU GNU/Linux.*
+    See http://satgnu.org for information about the GPack package repositry.
 
 - nym
 
