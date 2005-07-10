@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.29 2005/07/10 02:49:42 nymacro Exp $
+# $Id: gpack.sh,v 1.30 2005/07/10 03:02:16 nymacro Exp $
 
 ########################################################################
 #
@@ -359,6 +359,14 @@ pkg_build() {
     # set up variable for CRUX compatibility
     local PKGMK_SOURCE_DIR=$PKG_SOURCE_DIR
 
+    # set up stuff for m5sum
+    local PKG_CHECKSUM=`echo $PKG_FILE_NAME | sed -e "s|$PKG_FILE|checksum|"`
+    if [ -e "$PKG_CHECKSUM" ]; then
+	MAKE_CHECKSUM=no
+    else
+	MAKE_CHECKSUM=yes
+    fi
+
     # make sure source is available
     verbose 'Getting source'
     for i in "${source[@]}"; do
@@ -379,8 +387,7 @@ pkg_build() {
 	fi
 
 	# check md5sum
-	local PKG_CHECKSUM=`echo $PKG_FILE_NAME | sed -e "s|$PKG_FILE|checksum|"`
-	if [ -e "$PKG_CHECKSUM" ]; then
+	if [ "$MAKE_CHECKSUM" == "no" ]; then
 	    verbose "Checking source integrity..."
 	    local CHKSUM=`cat $PKG_CHECKSUM | grep $SRC_FILE | awk '{print $1;}'`
 	    local FILE_CHKSUM=`md5sum $SRC_LOCATION$SRC_FILE | sed -e "s|$SRC_LOCATION||" | awk '{print $1;}'`
