@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.28 2005/07/07 23:23:26 nymacro Exp $
+# $Id: gpack.sh,v 1.29 2005/07/10 02:49:42 nymacro Exp $
 
 ########################################################################
 #
@@ -63,6 +63,11 @@ if [ -z "$PKG_PACKAGE_DIR" ]; then
     exit 1
 fi
 
+if [ -z "$PKG_TEMP_DIR" ]; then
+    echo "PKG_TEMP_DIR not set in gpack.conf"
+    exit 1
+fi
+
 # create dirs if not exist
 if [ ! -d "$PKG_CONF_DIR" ]; then
     echo "Creating configuration directory"
@@ -87,6 +92,11 @@ fi
 if [ ! -d "$PKG_PACKAGE_DIR" ]; then
     echo "Creating binary package directory"
     mkdir -p $PKG_PACKAGE_DIR
+fi
+
+if [ ! -d "$PKG_TEMP_DIR" ]; then
+    echo "Creating temporary directory"
+    mkdir -p $PKG_TEMP_DIR
 fi
 
 ########
@@ -139,7 +149,8 @@ pkg_find() {
 	-not -regex '.*/{arch}/.*' \
 	-not -regex '.*/CVS/.*' \
 	-name "$1-*.$PKG_FILE" \
-	-or -regex ".*/$1\(.*\)?/$PKG_FILE" | sort -r))
+	-or -regex ".*/$1\(.*\)?/$PKG_FILE" \
+	-or -regex ".*/$1\(.*\)?/Pkgfile" | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
 	echo "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
@@ -352,6 +363,7 @@ pkg_build() {
     verbose 'Getting source'
     for i in "${source[@]}"; do
 	local SRC_FILE=`echo $i | sed 's|.*/||'`
+	local SRC_LOCATION="$PKG_SOURCE_DIR/"
 	local SRC_DIR=`echo $PKG_FILE_NAME | sed -e 's|\(.*\)/.*$|\1|'`
 	verbose "Checking for $SRC_FILE"
 	# check in SATPKG dir for file
@@ -363,59 +375,15 @@ pkg_build() {
 		fi
 	    fi
 	else
-	    # this file is probably config & can be copied quickly
-	    cp "$SRC_DIR/$SRC_FILE" "$SRC"
-	    continue
+	    SRC_LOCATION="$SRC_DIR/"
 	fi
 
-	# copy/extract files
-	(
-	    cd $PKG_SOURCE_DIR &&
-	    local EXT2=`echo $SRC_FILE | sed -e 's|.*\.\(.*\)\..*|\1|'`
-	    case `echo $SRC_FILE | sed -e 's/.*\.//'` in
-		gz)
-		    if [ "$EXT2" == "tar" ]; then
-			verbose "Extracting tar.gz"
-			tar -xzf $SRC_FILE -C $SRC
-		    else
-			verbose "Extracting gz"
-			(cp $SRC_FILE $SRC && cd $SRC && gunzip $SRC_FILE)
-		    fi
-		    ;;
-		tgz)
-		    verbose "Extracting tgz"
-		    tar -xzf $SRC_FILE -C $SRC
-		    ;;
-		bz2)
-		    if [ "$EXT2" == "tar" ]; then
-			verbose "Extracting tar.bz2"
-			tar -xjf $SRC_FILE -C $SRC
-		    else
-			verbose "Extracting bz2"
-			(cp $SRC_FILE $SRC && cd $SRC && bunzip2 $SRC_FILE)
-		    fi
-		    ;;
-		zip)
-		    verbose "Extracting zip"
-		    unzip $SRC_FILE -d $SRC
-		    ;;
-		*)
-		    verbose "Copying to $SRC"
-		    cp $SRC_FILE $SRC
-		    ;;
-	    esac
-	) || error "Extracting source"
-    done
-
-    # check checksum of source files
-    verbose "Checking MD5 sums"
-    local PKG_CHECKSUM=`echo $PKG_FILE_NAME | sed -e "s|$PKG_FILE|checksum|"`
-    if [ -e "$PKG_CHECKSUM" ]; then
-	verbose "Checking source integrity..."
-	for i in "${source[@]}"; do
-	    local SRC_FILE=`echo $i | sed 's|.*/||'`
+	# check md5sum
+	local PKG_CHECKSUM=`echo $PKG_FILE_NAME | sed -e "s|$PKG_FILE|checksum|"`
+	if [ -e "$PKG_CHECKSUM" ]; then
+	    verbose "Checking source integrity..."
 	    local CHKSUM=`cat $PKG_CHECKSUM | grep $SRC_FILE | awk '{print $1;}'`
-	    local FILE_CHKSUM=`(cd $PKG_SOURCE_DIR; md5sum $SRC_FILE) | awk '{print $1;}'`
+	    local FILE_CHKSUM=`md5sum $SRC_LOCATION$SRC_FILE | sed -e "s|$SRC_LOCATION||" | awk '{print $1;}'`
 	    if [ ! "$FILE_CHKSUM" == "$CHKSUM" ]; then
 		echo "MD5 Mismatch ($SRC_FILE)"
 		echo "Checksum:  $CHKSUM"
@@ -423,16 +391,53 @@ pkg_build() {
 		rm -rf $WORK
 		exit 1
 	    fi
-	done
-    else
-	verbose "Generating checksum for source files..."
-	for i in "${source[@]}"; do
+	else
+	    # create md5sum
+	    verbose "Creating MD5 sum"
 	    local SRC_FILE=`echo $i | sed 's|.*/||'`
-	    local CHKSUM=`md5sum $PKG_SOURCE_DIR/$SRC_FILE`
+	    local CHKSUM=`md5sum $SRC_LOCATION$SRC_FILE`
 	    local MD5=`echo $CHKSUM | awk '{print $1;}'`
 	    echo "$MD5 $SRC_FILE" >> $PKG_CHECKSUM
-	done
-    fi
+	fi
+
+	# copy/extract files
+	(
+	    cd $PKG_SOURCE_DIR &&
+	    local EXT2=`echo $SRC_LOCATION$SRC_FILE | sed -e 's|.*\.\(.*\)\..*|\1|'`
+	    case `echo $SRC_FILE | sed -e 's/.*\.//'` in
+		gz)
+		    if [ "$EXT2" == "tar" ]; then
+			verbose "Extracting tar.gz"
+			tar -xzf $SRC_LOCATION$SRC_FILE -C $SRC
+		    else
+			verbose "Extracting gz"
+			(cp $SRC_LOCATION$SRC_FILE $SRC && cd $SRC && gunzip $SRC_FILE)
+		    fi
+		    ;;
+		tgz)
+		    verbose "Extracting tgz"
+		    tar -xzf $SRC_LOCATION$SRC_FILE -C $SRC
+		    ;;
+		bz2)
+		    if [ "$EXT2" == "tar" ]; then
+			verbose "Extracting tar.bz2"
+			tar -xjf $SRC_LOCATION$SRC_FILE -C $SRC
+		    else
+			verbose "Extracting bz2"
+			(cp $SRC_LOCATION$SRC_FILE $SRC && cd $SRC && bunzip2 $SRC_FILE)
+		    fi
+		    ;;
+		zip)
+		    verbose "Extracting zip"
+		    unzip $SRC_LOCATION$SRC_FILE -d $SRC
+		    ;;
+		*)
+		    verbose "Copying to $SRC"
+		    cp $SRC_LOCATION$SRC_FILE $SRC
+		    ;;
+	    esac
+	) || error "Extracting source"
+    done
 
     # build
     verbose "Build"
