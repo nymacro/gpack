@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Interface
-# $Id: gpack,v 1.15 2005/07/07 11:56:52 maci Exp $
+# $Id: gpack,v 1.16 2005/07/20 06:50:31 nymacro Exp $
 
 ########################################################################
 #
@@ -90,16 +90,7 @@ case "$COMMAND" in
 	;;
     depinst)
 	for i in "${ARGS[@]}"; do
-	    TMP=`pkg_find_bin $i`
-	    if [ -z "$TMP" ]; then
-		# build package
-		TMP2=`pkg_find $i`
-		[ -z "$TMP2" ] && error "No package ($i) found"
-		if ! pkg_build "$TMP2" ; then
-		    error "($i) Build failed"
-		fi
-	    fi
-	    pkg_depinst "$TMP"
+	    pkg_depinst "$i"
 	done
 	;;
     info)
@@ -120,7 +111,7 @@ case "$COMMAND" in
 	;;
     clean)
 	for i in "${ARGS[@]}"; do
-	    rm `pkg_find_bin $i`
+	    rm `pkg_find_bin $i` || echo "Nothing to clean"
 	done
 	;;
     rebuild)
@@ -138,6 +129,12 @@ case "$COMMAND" in
 	for i in "${ARGS[@]}"; do
 	    pkg_depends $i
 	done
+	;;
+    update)
+	echo "Not complete yet"
+	;;
+    sysup)
+	echo "Not complete yet"
 	;;
     *)
 	echo "GPack $VERSION - Aaron Marks 2005 - See COPYING for license details"

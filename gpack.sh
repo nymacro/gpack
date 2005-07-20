@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.30 2005/07/10 03:02:16 nymacro Exp $
+# $Id: gpack.sh,v 1.31 2005/07/20 06:50:31 nymacro Exp $
 
 ########################################################################
 #
@@ -152,11 +152,11 @@ pkg_find() {
 	-or -regex ".*/$1\(.*\)?/$PKG_FILE" \
 	-or -regex ".*/$1\(.*\)?/Pkgfile" | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
-	echo "Possible packages:" 1>&2
+	verbose "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
-	    echo "$i" 1>&2
+	    verbose "$i" 1>&2
 	done
-	echo "Using:" 1>&2
+	verbose "Using:" 1>&2
     fi
     echo "${TMP[0]}"
 }
@@ -169,11 +169,11 @@ pkg_find_bin() {
 	-not -regex '.*/CVS/.*' \
 	-name "$1-*.$PKG_EXTENSION" | sort -r))
     if [[ ${#TMP[@]} > 1 ]]; then
-	echo "Possible packages:" 1>&2
+	verbose "Possible packages:" 1>&2
 	for i in "${TMP[@]}"; do
-	    echo "$i" 1>&2
+	    verbose "$i" 1>&2
 	done
-	echo "Using:" 1>&2
+	verbose "Using:" 1>&2
     fi
     echo "${TMP[0]}"
 }
@@ -664,23 +664,65 @@ pkg_depinst() {
 
     (
 	# clean up package environment (needed)
-	name=''
-	version=''
-	group=''
-	license=''
-	depends=()
-	optdeps=()
-	conflicts=()
-	source=()
+	unset name
+	unset version
+	unset group
+	unset license
+	unset depends
+	unset optdeps
+	unset conflicts
+	unset source
+
+	unset pre_install
+	unset post_install
+	unset pre_remove
+	unset post_remove
+
+	pre_install() {
+	    echo > /dev/null
+	}
+	post_install() {
+	    echo > /dev/null
+	}
+	pre_remove() {
+	    echo > /dev/null
+	}
+	post_remove() {
+	    echo > /dev/null
+	}
+
+	########
+
+	trap "rm -rf $TMP && exit 'Interrupted build'" TERM HUP INT
 
 	local TMP=$PKG_TEMP_DIR/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`-dep
 	if [ -d "$TMP" ]; then
-	    warn "$TMP already exists"
-	    return 0
+	    error "$TMP already exists (possibly circular dependancy)."
 	fi
 	mkdir $TMP
 
-	tar -xzf $1 -C $TMP $PKG_FILE
+	local PACKAGE_FILE=`pkg_find_bin $1`
+	if [ -z "$PACKAGE_FILE" ]; then
+	    local TMP_PKG_FILE=`pkg_find $1`
+	    [ -z "$TMP_PKG_FILE" ] && error "Could not find $1"
+	    . "$TMP_PKG_FILE"
+
+	    # install deps
+	    for i in "${depends[@]}"; do
+		if ! pkg_installed "$i" ; then
+		    pkg_depinst "$i"
+		fi
+	    done
+
+	    if ! pkg_build `pkg_find $1`; then
+		rm -rf $TMP
+		error "Error building $1"
+	    fi
+	    PACKAGE_FILE=`pkg_find_bin $1`
+	fi
+
+	# get the package descriptor
+	tar -xzf $PACKAGE_FILE -C $TMP $PKG_FILE
 
 	if ! . $TMP/$PKG_FILE ; then
 	    error "Could not find package config"
@@ -688,10 +730,8 @@ pkg_depinst() {
 	
         # check dependancies
 	for i in "${depends[@]}"; do
-	    if ! pkg_meets $i; then
-		if ! pkg_depinst `pkg_find_bin $i`; then
-		    error "Installing dependancies"
-		fi
+	    if ! pkg_meets "$i"; then
+		pkg_depinst "$i"
 	    fi
 	done
 	
@@ -703,20 +743,21 @@ pkg_depinst() {
 
 	for i in "${conflicts[@]}"; do
 	    if pkg_meets $i; then
+		rm -rf $TMP
 		error "Conflicting packages ($i)"
 	    fi
 	done
 	
+	# install
 	local PKG_NAME="$PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION"
 	if [ ! -e "$PKG_NAME" ]; then
-	    if ! pkg_build $1 ; then
-		error "Build failed"
-	    fi
+	    rm -rf $TMP
+	    error "Build failed"
 	fi
 	pkg_install "$PKG_PACKAGE_DIR/$name-$version-$release.$PKG_EXTENSION"
 
 	rm -rf $TMP
-    ) || exit 1
+    ) || error "Error during depinst"
     return 0
 }
 
