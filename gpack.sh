@@ -1,7 +1,7 @@
 #!/bin/bash
 # GPack Package Manager
 # Package Manager Internals
-# $Id: gpack.sh,v 1.31 2005/07/20 06:50:31 nymacro Exp $
+# $Id: gpack.sh,v 1.32 2005/07/21 11:58:44 nymacro Exp $
 
 ########################################################################
 #
@@ -28,7 +28,6 @@
 # CONFIGURATION
 VERSION=0.9.2
 
-# -e errexit -x xtrace
 set -e
 
 # Load configuration
@@ -181,7 +180,7 @@ pkg_find_bin() {
 # Name: pkg_version <package directory>
 # Desc: Returns version of package
 pkg_version() {
-    if ! . $1/$PKG_FILE ; then
+    if ! . "$1" ; then
 	error "Could not find $PKG_FILE"
     fi
 
@@ -192,7 +191,7 @@ pkg_version() {
 # Name: pkg_info <package dir>
 # Desc: Prints package information to screen
 pkg_info() {
-    if ! . $1 ; then
+    if ! . "$1" ; then
 	error "Failed to find package file."
     fi
 
@@ -248,7 +247,7 @@ pkg_meets() {
     fi
 
     # current version
-    local PKG_VERSION=`pkg_version $PKG_CONF_DIR/$PKG_NAME`
+    local PKG_VERSION=`pkg_version $PKG_CONF_DIR/$PKG_NAME/$PKG_FILE`
 
     ########
 
@@ -277,7 +276,7 @@ pkg_meets() {
 	    return 0
 	    ;;
 	*)
-	    error "Bad operator"
+	    error "Bad operator ('$1')"
 	    ;;
     esac
 
@@ -697,7 +696,9 @@ pkg_depinst() {
 
 	local TMP=$PKG_TEMP_DIR/gpack-`echo "$1" | sed -e 's|.*/\(.*\)-.*$|\1|'`-dep
 	if [ -d "$TMP" ]; then
-	    error "$TMP already exists (possibly circular dependancy)."
+	    #error "$TMP already exists (possible cyclic dependancy)."
+	    warn "$TMP already existed (possible cyclic dependancy)"
+	    return 0
 	fi
 	mkdir $TMP
 
@@ -761,9 +762,41 @@ pkg_depinst() {
     return 0
 }
 
-# Name: pkg_depends <package name>
-# Desc: Print a dependancy tree for a package
+# Name: pkg_depends <package name> <temporary file name>
+# Desc: Print dependancies of package
 pkg_depends() {
+    local LOCATION=`pkg_find $1`
+    [ -z "$LOCATION" ] && error "Package $1 not found"
+    [ -z "$2" ] && error "Dependancy list file not specified"
+
+    (
+	# clean up environment
+	name=''
+	version=''
+	group=''
+	license=''
+	depends=()
+	optdeps=()
+	conflicts=()
+	source=()
+
+	. $LOCATION
+	
+	for i in "${depends[@]}"; do
+	    pkg_depends "$i" "$2"
+	done
+
+	local TMP_LISTED=`cat $2 2>/dev/null | grep "^$name\$"`
+	if [ -z "$TMP_LISTED" ]; then
+	    echo "$name"
+	    echo "$name" >> $2
+	fi
+    )
+}
+
+# Name: pkg_dependstree <package name>
+# Desc: Print a dependancy tree for a package
+pkg_dependstree() {
     local LOCATION=`pkg_find $1`
     local INDENT=""
     [ -z "$LOCATION" ] && error "Package $1 not found"
@@ -788,7 +821,7 @@ pkg_depends() {
 
 	echo "$INDENT$name"
 	for i in "${depends[@]}"; do
-	    pkg_depends "$i" "$2--"
+	    pkg_dependstree "$i" "$2--"
 	done
     )
 }
